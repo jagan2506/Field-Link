@@ -27,7 +27,7 @@ const Header: React.FC<HeaderProps> = ({ lastUpdate }) => {
             </div>
             <div className="flex items-center space-x-2 bg-green-50 px-3 py-2 rounded-lg">
               <User className="w-4 h-4 text-green-600" />
-              <span className="text-green-700 font-medium">Green Valley Farm</span>
+              <span className="text-green-700 font-medium">FARM</span>
             </div>
           </div>
         </div>
