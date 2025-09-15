@@ -10,9 +10,9 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
   const [currentImage, setCurrentImage] = useState(0);
   
   const images = [
-    { type: 'RGB', url: 'https://images.pexels.com/photos/2132227/pexels-photo-2132227.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop' },
-    { type: 'NDVI', url: 'https://images.pexels.com/photos/1595104/pexels-photo-1595104.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop' },
-    { type: 'False Color', url: 'https://images.pexels.com/photos/1274260/pexels-photo-1274260.jpeg?auto=compress&cs=tinysrgb&w=800&h=600&fit=crop' }
+    { type: 'RGB', url: 'https://tse3.mm.bing.net/th/id/OIP.Mrr5l5w2inczfQ9Ue-MRjQHaE7?pid=Api&P=0&h=180' },
+    { type: 'NDVI', url: 'https://debraleebaldwin.com/wp-content/uploads/00-Wind-9.20.20-1.20.21_R-768x510.jpg' },
+    { type: 'False Color', url: 'https://tse3.mm.bing.net/th/id/OIP.dxFqZ8_tERZT9dnpyNblRgHaE8?pid=Api&P=0&h=180' }
   ];
 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
