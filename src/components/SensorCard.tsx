@@ -1,4 +1,5 @@
 import React from 'react';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface SensorCardProps {
   icon: React.ReactNode;
@@ -9,6 +10,7 @@ interface SensorCardProps {
 }
 
 const SensorCard: React.FC<SensorCardProps> = ({ icon, title, value, status, description }) => {
+  const { t } = useLanguage();
   const getStatusColor = () => {
     switch (status) {
       case 'normal': return 'text-green-600 bg-green-50 border-green-200';
@@ -36,7 +38,7 @@ const SensorCard: React.FC<SensorCardProps> = ({ icon, title, value, status, des
           status === 'warning' ? 'bg-orange-100 text-orange-700' :
           'bg-red-100 text-red-700'
         }`}>
-          {status === 'normal' ? 'Normal' : status === 'warning' ? 'Warning' : 'Alert'}
+          {status === 'normal' ? t.normal : status === 'warning' ? t.warning : t.alert}
         </div>
       </div>
       <h3 className="text-lg font-semibold text-gray-800 mb-1">{title}</h3>

@@ -1,12 +1,14 @@
 import React from 'react';
 import { AlertTriangle, Info, CheckCircle, AlertCircle } from 'lucide-react';
 import { SensorData } from '../utils/mockData';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface AlertSectionProps {
   sensorData: SensorData;
 }
 
 const AlertSection: React.FC<AlertSectionProps> = ({ sensorData }) => {
+  const { t } = useLanguage();
   const generateAlerts = () => {
     const alerts = [];
     
@@ -15,14 +17,14 @@ const AlertSection: React.FC<AlertSectionProps> = ({ sensorData }) => {
       alerts.push({
         type: 'warning',
         icon: <AlertTriangle className="w-5 h-5" />,
-        message: 'High temperature detected. Consider providing shade or additional irrigation.',
+        message: t.highTempAlert,
         action: 'Monitor temperature closely and ensure adequate water supply.'
       });
     } else if (sensorData.temperature < 15) {
       alerts.push({
         type: 'error',
         icon: <AlertCircle className="w-5 h-5" />,
-        message: 'Temperature is too low for optimal crop growth.',
+        message: t.lowTempAlert,
         action: 'Consider frost protection measures if temperature continues to drop.'
       });
     }
@@ -32,14 +34,14 @@ const AlertSection: React.FC<AlertSectionProps> = ({ sensorData }) => {
       alerts.push({
         type: 'error',
         icon: <AlertCircle className="w-5 h-5" />,
-        message: 'Critical: Soil moisture is dangerously low. Immediate irrigation required.',
+        message: t.criticalMoistureAlert,
         action: 'Start irrigation system immediately to prevent crop stress.'
       });
     } else if (sensorData.soilMoisture < 50) {
       alerts.push({
         type: 'warning',
         icon: <AlertTriangle className="w-5 h-5" />,
-        message: 'Soil moisture is below optimal levels. Plan irrigation soon.',
+        message: t.lowMoistureAlert,
         action: 'Schedule irrigation within the next 6-12 hours.'
       });
     }
@@ -49,7 +51,7 @@ const AlertSection: React.FC<AlertSectionProps> = ({ sensorData }) => {
       alerts.push({
         type: 'warning',
         icon: <AlertTriangle className="w-5 h-5" />,
-        message: `Soil pH (${sensorData.phLevel}) is outside optimal range (6.0-7.5).`,
+        message: `${t.phAlert} (${sensorData.phLevel})`,
         action: 'Consider soil amendment to adjust pH levels for better nutrient uptake.'
       });
     }
@@ -59,14 +61,14 @@ const AlertSection: React.FC<AlertSectionProps> = ({ sensorData }) => {
       alerts.push({
         type: 'error',
         icon: <AlertCircle className="w-5 h-5" />,
-        message: `Crop health is poor (NDVI: ${sensorData.cropHealth.ndvi}). Immediate attention required.`,
+        message: `${t.poorCropAlert} (NDVI: ${sensorData.cropHealth.ndvi}).`,
         action: 'Investigate potential diseases, pests, or nutrient deficiencies.'
       });
     } else if (sensorData.cropHealth.status === 'Moderate') {
       alerts.push({
         type: 'warning',
         icon: <AlertTriangle className="w-5 h-5" />,
-        message: `Crop health is moderate (NDVI: ${sensorData.cropHealth.ndvi}). Monitor closely.`,
+        message: `${t.moderateCropAlert} (NDVI: ${sensorData.cropHealth.ndvi}).`,
         action: 'Consider nutrient supplementation or pest management strategies.'
       });
     }
@@ -76,7 +78,7 @@ const AlertSection: React.FC<AlertSectionProps> = ({ sensorData }) => {
       alerts.push({
         type: 'success',
         icon: <CheckCircle className="w-5 h-5" />,
-        message: 'All parameters are within optimal ranges. Crops are healthy!',
+        message: t.allNormalAlert,
         action: 'Continue current management practices.'
       });
     }
@@ -112,7 +114,7 @@ const AlertSection: React.FC<AlertSectionProps> = ({ sensorData }) => {
     <section className="bg-white rounded-xl shadow-lg p-8">
       <div className="flex items-center space-x-2 mb-6">
         <Info className="w-6 h-6 text-blue-600" />
-        <h2 className="text-2xl font-bold text-gray-800">Smart Alerts & Recommendations</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{t.smartAlerts}</h2>
       </div>
       
       <div className="space-y-4">
@@ -128,7 +130,7 @@ const AlertSection: React.FC<AlertSectionProps> = ({ sensorData }) => {
               <div className="flex-1">
                 <p className="font-semibold mb-2">{alert.message}</p>
                 <div className="flex items-start space-x-2">
-                  <span className="text-sm font-medium">Recommended Action:</span>
+                  <span className="text-sm font-medium">{t.recommendedAction}</span>
                   <p className="text-sm flex-1">{alert.action}</p>
                 </div>
               </div>

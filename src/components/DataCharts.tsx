@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { BarChart3, Calendar, TrendingUp } from 'lucide-react';
 import { generateHistoricalData } from '../utils/mockData';
+import { useLanguage } from '../contexts/LanguageContext';
 
 const DataCharts: React.FC = () => {
+  const { t } = useLanguage();
   const [timeRange, setTimeRange] = useState<'24h' | '7d'>('24h');
   const historicalData = generateHistoricalData(timeRange);
 
@@ -22,7 +24,7 @@ const DataCharts: React.FC = () => {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center space-x-2">
           <BarChart3 className="w-6 h-6 text-blue-600" />
-          <h2 className="text-2xl font-bold text-gray-800">Data Trends & Analytics</h2>
+          <h2 className="text-2xl font-bold text-gray-800">{t.dataTrendsAnalytics}</h2>
         </div>
         
         <div className="flex space-x-2">
@@ -34,7 +36,7 @@ const DataCharts: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            24 Hours
+            {t.hours24}
           </button>
           <button
             onClick={() => setTimeRange('7d')}
@@ -44,7 +46,7 @@ const DataCharts: React.FC = () => {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            7 Days
+            {t.days7}
           </button>
         </div>
       </div>
@@ -54,11 +56,11 @@ const DataCharts: React.FC = () => {
         <div className="bg-gradient-to-br from-red-50 to-orange-50 p-6 rounded-lg">
           <div className="flex items-center space-x-2 mb-4">
             <div className="w-3 h-3 bg-red-500 rounded-full"></div>
-            <h3 className="font-semibold text-gray-800">Temperature (°C)</h3>
+            <h3 className="font-semibold text-gray-800">{t.temperature} (°C)</h3>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-gray-600">
-              <span>Current</span>
+              <span>{t.current}</span>
               <span className="font-medium">{historicalData.temperature[historicalData.temperature.length - 1]}°C</span>
             </div>
             <div className="h-32 bg-white rounded relative overflow-hidden">
@@ -84,11 +86,11 @@ const DataCharts: React.FC = () => {
         <div className="bg-gradient-to-br from-blue-50 to-cyan-50 p-6 rounded-lg">
           <div className="flex items-center space-x-2 mb-4">
             <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-            <h3 className="font-semibold text-gray-800">Soil Moisture (%)</h3>
+            <h3 className="font-semibold text-gray-800">{t.soilMoisture} (%)</h3>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-gray-600">
-              <span>Current</span>
+              <span>{t.current}</span>
               <span className="font-medium">{historicalData.soilMoisture[historicalData.soilMoisture.length - 1]}%</span>
             </div>
             <div className="h-32 bg-white rounded relative overflow-hidden">
@@ -114,11 +116,11 @@ const DataCharts: React.FC = () => {
         <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-6 rounded-lg">
           <div className="flex items-center space-x-2 mb-4">
             <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-            <h3 className="font-semibold text-gray-800">pH Level</h3>
+            <h3 className="font-semibold text-gray-800">{t.phLevel}</h3>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm text-gray-600">
-              <span>Current</span>
+              <span>{t.current}</span>
               <span className="font-medium">{historicalData.phLevel[historicalData.phLevel.length - 1]}</span>
             </div>
             <div className="h-32 bg-white rounded relative overflow-hidden">
@@ -142,9 +144,9 @@ const DataCharts: React.FC = () => {
       </div>
       
       <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-        <h4 className="font-semibold text-gray-800 mb-2">Analysis Summary</h4>
+        <h4 className="font-semibold text-gray-800 mb-2">{t.analysisSummary}</h4>
         <p className="text-sm text-gray-600">
-          Over the last {timeRange === '24h' ? '24 hours' : '7 days'}, soil moisture has decreased while temperature has increased. 
+          Over the last {timeRange === '24h' ? t.hours24.toLowerCase() : t.days7.toLowerCase()}, soil moisture has decreased while temperature has increased. 
           pH levels remain stable. Consider irrigation to maintain optimal growing conditions.
         </p>
       </div>

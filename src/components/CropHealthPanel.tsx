@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Eye, Camera, Zap, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { CropHealthData } from '../utils/mockData';
+import { useLanguage } from '../contexts/LanguageContext';
 
 interface CropHealthPanelProps {
   cropHealth: CropHealthData;
@@ -8,6 +9,7 @@ interface CropHealthPanelProps {
 }
 
 const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenChatBot }) => {
+  const { t } = useLanguage();
   const [currentImage, setCurrentImage] = useState(0);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [analysisResults, setAnalysisResults] = useState<{[key: number]: any}>({});
@@ -123,14 +125,14 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
     <section className="bg-white rounded-xl shadow-lg p-8">
       <div className="flex items-center space-x-2 mb-6">
         <Eye className="w-6 h-6 text-blue-600" />
-        <h2 className="text-2xl font-bold text-gray-800">Crop Health Visual Insights</h2>
+        <h2 className="text-2xl font-bold text-gray-800">{t.cropHealthVisualInsights}</h2>
       </div>
       
       {/* Confirmation Dialog */}
       {showConfirmDialog && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md mx-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Analyze Plant Image</h3>
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">{t.analyzeImage}</h3>
             <p className="text-gray-600 mb-6">
               Would you like to proceed with AI analysis to detect diseases and health conditions for this plant image?
             </p>
@@ -139,13 +141,13 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
                 onClick={handleCancelAnalysis}
                 className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                {t.cancel}
               </button>
               <button
                 onClick={handleProceedAnalysis}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
-                Proceed with Analysis
+                {t.proceedAnalysis}
               </button>
             </div>
           </div>
@@ -172,7 +174,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
               className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
-              <span>Previous</span>
+              <span>{t.previous}</span>
             </button>
             
             <div className="flex space-x-2">
@@ -191,7 +193,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
               onClick={nextImage}
               className="flex items-center space-x-1 bg-gray-100 hover:bg-gray-200 px-3 py-2 rounded-lg transition-colors"
             >
-              <span>Next</span>
+              <span>{t.next}</span>
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
@@ -203,7 +205,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
               className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400"
             >
               <Camera className="w-4 h-4" />
-              <span>{isAnalyzing ? 'Analyzing...' : 'Capture Plant Image'}</span>
+              <span>{isAnalyzing ? t.analyzing : t.captureImage}</span>
             </button>
             <input
               ref={fileInputRef}
@@ -221,39 +223,43 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
           <div className="bg-gradient-to-r from-green-50 to-blue-50 p-6 rounded-lg">
             <div className="flex items-center space-x-2 mb-4">
               <Camera className="w-5 h-5 text-blue-600" />
-              <h3 className="text-xl font-semibold text-gray-800">Analysis Results</h3>
+              <h3 className="text-xl font-semibold text-gray-800">{t.analysisResults}</h3>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-1">NDVI Index</p>
+                <p className="text-sm text-gray-600 mb-1">{t.ndviIndex}</p>
                 <p className="text-2xl font-bold text-green-600">
                   {currentAnalysis?.ndvi || cropHealth.ndvi}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-1">Overall Health</p>
+                <p className="text-sm text-gray-600 mb-1">{t.overallHealth}</p>
                 <p className={`text-2xl font-bold ${
                   (currentAnalysis?.healthStatus || cropHealth.status) === 'Healthy' ? 'text-green-600' :
                   (currentAnalysis?.healthStatus || cropHealth.status) === 'Moderate' ? 'text-orange-600' : 'text-red-600'
                 }`}>
-                  {currentAnalysis?.healthStatus || cropHealth.status}
+                  {currentAnalysis?.healthStatus === 'Healthy' ? t.healthy : 
+                   currentAnalysis?.healthStatus === 'Moderate' ? t.moderate : 
+                   currentAnalysis?.healthStatus === 'Poor' ? t.poor : 
+                   cropHealth.status === 'Healthy' ? t.healthy : 
+                   cropHealth.status === 'Moderate' ? t.moderate : t.poor}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-1">Chlorophyll</p>
+                <p className="text-sm text-gray-600 mb-1">{t.chlorophyll}</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {currentAnalysis?.chlorophyll || cropHealth.chlorophyllLevel}
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-1">Disease Status</p>
+                <p className="text-sm text-gray-600 mb-1">{t.diseaseStatus}</p>
                 <p className={`text-lg font-bold ${
                   currentAnalysis?.severity === 'Severe' ? 'text-red-600' :
                   currentAnalysis?.severity === 'Moderate' ? 'text-orange-600' :
                   currentAnalysis?.diseaseDetected ? 'text-yellow-600' : 'text-green-600'
                 }`}>
-                  {currentAnalysis ? (currentAnalysis.diseaseDetected ? `${currentAnalysis.diseaseName} (${currentAnalysis.severity})` : 'Healthy') : 'Not Analyzed'}
+                  {currentAnalysis ? (currentAnalysis.diseaseDetected ? `${currentAnalysis.diseaseName} (${currentAnalysis.severity})` : t.healthy) : t.notAnalyzed}
                 </p>
               </div>
             </div>
@@ -262,7 +268,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
           <div className="bg-blue-50 p-6 rounded-lg">
             <div className="flex items-center space-x-2 mb-3">
               <Zap className="w-5 h-5 text-blue-600" />
-              <h4 className="font-semibold text-gray-800">Key Insights</h4>
+              <h4 className="font-semibold text-gray-800">{t.keyInsights}</h4>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
               {currentAnalysis ? (
@@ -312,8 +318,8 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
                 }`}
               >
                 {currentAnalysis.diseaseDetected 
-                  ? '🩺 Get Detailed Treatment Plan' 
-                  : '🌱 Get Care & Maintenance Tips'
+                  ? t.getDetailedTreatment
+                  : t.getCareTips
                 }
               </button>
               <p className="text-sm text-gray-600 mt-2">

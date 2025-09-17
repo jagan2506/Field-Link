@@ -8,8 +8,10 @@ import AlertSection from './components/AlertSection';
 import Footer from './components/Footer';
 import ChatBot from './components/ChatBot';
 import { generateMockData, SensorData } from './utils/mockData';
+import { useLanguage } from './contexts/LanguageContext';
 
 function App() {
+  const { t } = useLanguage();
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [chatBotMessage, setChatBotMessage] = useState<string>('');
@@ -33,7 +35,7 @@ function App() {
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <Leaf className="w-8 h-8 text-green-600 animate-pulse" />
-          <p className="text-lg text-gray-600">Loading farm data...</p>
+          <p className="text-lg text-gray-600">{t.loadingText}</p>
         </div>
       </div>
     );
@@ -48,34 +50,34 @@ function App() {
         <section>
           <div className="flex items-center space-x-2 mb-6">
             <TrendingUp className="w-6 h-6 text-green-600" />
-            <h2 className="text-2xl font-bold text-gray-800">Current Field Conditions</h2>
+            <h2 className="text-2xl font-bold text-gray-800">{t.currentFieldConditions}</h2>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <SensorCard
               icon={<Thermometer className="w-8 h-8" />}
-              title="Temperature"
+              title={t.temperature}
               value={`${sensorData.temperature}°C`}
               status={sensorData.temperature > 30 ? 'warning' : sensorData.temperature < 15 ? 'error' : 'normal'}
-              description="Optimal: 18-28°C"
+              description={`${t.optimal} 18-28°C`}
             />
             <SensorCard
               icon={<Droplets className="w-8 h-8" />}
-              title="Soil Moisture"
+              title={t.soilMoisture}
               value={`${sensorData.soilMoisture}%`}
               status={sensorData.soilMoisture < 30 ? 'error' : sensorData.soilMoisture < 50 ? 'warning' : 'normal'}
-              description="Optimal: 50-70%"
+              description={`${t.optimal} 50-70%`}
             />
             <SensorCard
               icon={<FlaskConical className="w-8 h-8" />}
-              title="pH Level"
+              title={t.phLevel}
               value={`${sensorData.phLevel}`}
               status={sensorData.phLevel < 6 || sensorData.phLevel > 7.5 ? 'warning' : 'normal'}
-              description="Optimal: 6.0-7.5"
+              description={`${t.optimal} 6.0-7.5`}
             />
             <SensorCard
               icon={<Leaf className="w-8 h-8" />}
-              title="Crop Health"
-              value={sensorData.cropHealth.status}
+              title={t.cropHealth}
+              value={sensorData.cropHealth.status === 'Healthy' ? t.healthy : sensorData.cropHealth.status === 'Moderate' ? t.moderate : t.poor}
               status={sensorData.cropHealth.status === 'Healthy' ? 'normal' : 
                      sensorData.cropHealth.status === 'Moderate' ? 'warning' : 'error'}
               description={`NDVI: ${sensorData.cropHealth.ndvi}`}
@@ -102,15 +104,15 @@ function App() {
         <section className="flex flex-wrap gap-4 justify-center">
           <button className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
             <Download className="w-5 h-5" />
-            <span>Download Report</span>
+            <span>{t.downloadReport}</span>
           </button>
           <button className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
             <Settings className="w-5 h-5" />
-            <span>Configure Alerts</span>
+            <span>{t.configureAlerts}</span>
           </button>
           <button className="flex items-center space-x-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors">
             <Bell className="w-5 h-5" />
-            <span>View All Alerts</span>
+            <span>{t.viewAllAlerts}</span>
           </button>
         </section>
       </main>
