@@ -6,6 +6,7 @@ import CropHealthPanel from './components/CropHealthPanel';
 import DataCharts from './components/DataCharts';
 import AlertSection from './components/AlertSection';
 import Footer from './components/Footer';
+import ChatBot from './components/ChatBot';
 import { generateMockData, SensorData } from './utils/mockData';
 
 function App() {
@@ -107,6 +108,7 @@ function App() {
       </main>
 
       <Footer />
+      <ChatBot />
     </div>
   );
 }
