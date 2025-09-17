@@ -359,7 +359,11 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
         <div className="fixed bottom-6 right-6 w-96 h-96 bg-white rounded-lg shadow-xl border z-50">
           <div className="flex items-center justify-between p-4 border-b bg-green-600 text-white rounded-t-lg">
             <div className="flex items-center space-x-2">
-              <Globe className="w-5 h-5" />
+              <Bot className="w-5 h-5" />
+              <span className="font-medium">AI Assistant</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <Globe className="w-4 h-4" />
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
@@ -369,14 +373,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
                   <option key={key} value={key}>{lang.name}</option>
                 ))}
               </select>
+              <button onClick={() => {
+                speechSynthesis.cancel();
+                setIsOpen(false);
+                onClose?.();
+              }}>
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <button onClick={() => {
-              speechSynthesis.cancel();
-              setIsOpen(false);
-              onClose?.();
-            }}>
-              <X className="w-5 h-5" />
-            </button>
           </div>
 
           <div className="flex-1 p-4 h-64 overflow-y-auto">
