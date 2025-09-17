@@ -93,15 +93,16 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
     if (pendingImageData) {
       setShowConfirmDialog(false);
       await analyzeImage(pendingImageData.data, pendingImageData.index);
-      
-      // Get analysis results and trigger chatbot with remedy
-      const results = analysisResults[pendingImageData.index];
-      if (results && results.diseaseDetected && onOpenChatBot) {
-        const remedyMessage = `Disease detected: ${results.diseaseName} with ${results.severity} severity. Please provide detailed treatment remedies and steps.`;
-        onOpenChatBot(remedyMessage);
-      }
-      
       setPendingImageData(null);
+    }
+  };
+  
+  const handleGetRemedies = () => {
+    if (currentAnalysis && onOpenChatBot) {
+      const remedyMessage = currentAnalysis.diseaseDetected 
+        ? `Disease detected: ${currentAnalysis.diseaseName} with ${currentAnalysis.severity} severity. Please provide detailed treatment remedies, prevention steps, and care instructions for this plant disease.`
+        : `Plant appears healthy with NDVI ${currentAnalysis.ndvi}. Please provide maintenance tips and preventive care suggestions to keep the plant healthy.`;
+      onOpenChatBot(remedyMessage);
     }
   };
   
@@ -131,7 +132,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
           <div className="bg-white rounded-lg p-6 max-w-md mx-4">
             <h3 className="text-lg font-semibold text-gray-800 mb-4">Analyze Plant Image</h3>
             <p className="text-gray-600 mb-6">
-              Would you like to proceed with AI analysis to detect diseases and get treatment remedies for this plant image?
+              Would you like to proceed with AI analysis to detect diseases and health conditions for this plant image?
             </p>
             <div className="flex space-x-3 justify-end">
               <button
@@ -281,7 +282,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
                   )}
                   {currentAnalysis.diseaseDetected && currentAnalysis.remedies && currentAnalysis.remedies.length > 0 && (
                     <>
-                      <li className="font-semibold text-blue-600">Treatment Remedies:</li>
+                      <li className="font-semibold text-blue-600">Quick Treatment Remedies:</li>
                       {currentAnalysis.remedies.map((remedy: string, index: number) => (
                         <li key={index} className="ml-4">• {remedy}</li>
                       ))}
@@ -298,6 +299,31 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
               )}
             </ul>
           </div>
+          
+          {/* Get Detailed Remedies Button */}
+          {currentAnalysis && (
+            <div className="mt-6 text-center">
+              <button
+                onClick={handleGetRemedies}
+                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
+                  currentAnalysis.diseaseDetected 
+                    ? 'bg-red-600 hover:bg-red-700 text-white' 
+                    : 'bg-green-600 hover:bg-green-700 text-white'
+                }`}
+              >
+                {currentAnalysis.diseaseDetected 
+                  ? '🩺 Get Detailed Treatment Plan' 
+                  : '🌱 Get Care & Maintenance Tips'
+                }
+              </button>
+              <p className="text-sm text-gray-600 mt-2">
+                {currentAnalysis.diseaseDetected 
+                  ? 'Get AI-powered treatment recommendations and step-by-step care instructions'
+                  : 'Get personalized care tips to maintain optimal plant health'
+                }
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </section>
