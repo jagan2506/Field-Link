@@ -392,18 +392,18 @@ Respond entirely in ${responseLang} language.`;
       </button>
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-96 bg-white rounded-lg shadow-xl border z-50">
-          <div className="flex items-center justify-between p-4 border-b bg-green-600 text-white rounded-t-lg">
+        <div className="fixed bottom-2 right-2 left-2 lg:bottom-6 lg:right-6 lg:left-auto w-auto lg:w-96 h-80 lg:h-96 bg-white rounded-lg shadow-xl border z-50">
+          <div className="flex items-center justify-between p-3 lg:p-4 border-b bg-green-600 text-white rounded-t-lg">
             <div className="flex items-center space-x-2">
-              <Bot className="w-5 h-5" />
-              <span className="font-medium">AI Assistant</span>
+              <Bot className="w-4 h-4 lg:w-5 lg:h-5" />
+              <span className="font-medium text-sm lg:text-base">AI Assistant</span>
             </div>
-            <div className="flex items-center space-x-2">
-              <Globe className="w-4 h-4" />
+            <div className="flex items-center space-x-1 lg:space-x-2">
+              <Globe className="w-3 h-3 lg:w-4 lg:h-4" />
               <select
                 value={selectedLanguage}
                 onChange={(e) => setSelectedLanguage(e.target.value)}
-                className="bg-green-700 text-white rounded px-2 py-1 text-sm"
+                className="bg-green-700 text-white rounded px-1 lg:px-2 py-1 text-xs lg:text-sm"
               >
                 {Object.entries(languages).map(([key, lang]) => (
                   <option key={key} value={key}>{lang.name}</option>
@@ -414,32 +414,32 @@ Respond entirely in ${responseLang} language.`;
                 setIsOpen(false);
                 onClose?.();
               }}>
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4 lg:w-5 lg:h-5" />
               </button>
             </div>
           </div>
 
-          <div className="flex-1 p-4 h-64 overflow-y-auto">
+          <div className="flex-1 p-3 lg:p-4 h-48 lg:h-64 overflow-y-auto">
             {analysisData && (
-              <div className="mb-3 text-center">
-                <div className="bg-blue-50 p-3 rounded-lg">
+              <div className="mb-2 lg:mb-3 text-center">
+                <div className="bg-blue-50 p-2 lg:p-3 rounded-lg">
                   <img 
                     src={analysisData.imageUrl} 
                     alt="Plant Analysis" 
-                    className="w-20 h-20 object-cover rounded mx-auto mb-2"
+                    className="w-16 h-16 lg:w-20 lg:h-20 object-cover rounded mx-auto mb-1 lg:mb-2"
                   />
                   <p className="text-xs text-gray-600">
                     {analysisData.diseaseDetected ? 
-                      `${analysisData.allDiseases?.length || 1} disease(s) detected | Primary: ${analysisData.diseaseName}` : 
-                      'Healthy Plant'} | Confidence: {analysisData.confidence}%
+                      `${analysisData.allDiseases?.length || 1} disease(s) | ${analysisData.diseaseName}` : 
+                      'Healthy Plant'} | {analysisData.confidence}%
                   </p>
                 </div>
               </div>
             )}
             
             {messages.map((message, index) => (
-              <div key={index} className={`mb-3 ${message.isUser ? 'text-right' : 'text-left'}`}>
-                <div className={`inline-block p-2 rounded-lg max-w-xs ${
+              <div key={index} className={`mb-2 lg:mb-3 ${message.isUser ? 'text-right' : 'text-left'}`}>
+                <div className={`inline-block p-2 rounded-lg max-w-xs lg:max-w-sm text-xs lg:text-sm ${
                   message.isUser ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'
                 }`}>
                   {!message.isUser && (
@@ -452,7 +452,7 @@ Respond entirely in ${responseLang} language.`;
                   {!message.isUser && (
                     <button
                       onClick={() => speakText(message.text)}
-                      className="ml-2 text-blue-600 hover:text-blue-800"
+                      className="ml-1 lg:ml-2 text-blue-600 hover:text-blue-800"
                     >
                       <Volume2 className="w-3 h-3 inline" />
                     </button>
@@ -466,34 +466,34 @@ Respond entirely in ${responseLang} language.`;
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-4 border-t">
-            <div className="flex space-x-2">
+          <div className="p-2 lg:p-4 border-t">
+            <div className="flex space-x-1 lg:space-x-2">
               <input
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && !isLoading && sendMessage()}
                 disabled={isLoading}
-                placeholder="Type your message..."
-                className="flex-1 border rounded-lg px-3 py-2 text-sm"
+                placeholder="Type message..."
+                className="flex-1 border rounded-lg px-2 lg:px-3 py-1 lg:py-2 text-xs lg:text-sm"
               />
               <button
                 onClick={startListening}
-                className={`p-2 rounded-lg ${isListening ? 'bg-red-600' : 'bg-blue-600'} text-white`}
+                className={`p-1 lg:p-2 rounded-lg ${isListening ? 'bg-red-600' : 'bg-blue-600'} text-white`}
               >
-                <Mic className="w-4 h-4" />
+                <Mic className="w-3 h-3 lg:w-4 lg:h-4" />
               </button>
               <button
                 onClick={sendMessage}
                 disabled={isLoading}
-                className={`p-2 rounded-lg text-white ${
+                className={`p-1 lg:p-2 rounded-lg text-white ${
                   isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
                 }`}
               >
                 {isLoading ? (
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3 h-3 lg:w-4 lg:h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <Send className="w-4 h-4" />
+                  <Send className="w-3 h-3 lg:w-4 lg:h-4" />
                 )}
               </button>
             </div>
