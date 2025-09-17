@@ -32,6 +32,8 @@ export interface Translations {
   analyzing: string;
   previous: string;
   next: string;
+  save: string;
+  close: string;
 
   // Crop health panel
   analysisResults: string;
@@ -112,6 +114,8 @@ export const translations: Record<Language, Translations> = {
     analyzing: "Analyzing...",
     previous: "Previous",
     next: "Next",
+    save: "Save",
+    close: "Close",
 
     analysisResults: "Analysis Results",
     ndviIndex: "NDVI Index",
@@ -186,6 +190,8 @@ export const translations: Record<Language, Translations> = {
     analyzing: "பகுப்பாய்வு செய்கிறது...",
     previous: "முந்தைய",
     next: "அடுத்த",
+    save: "சேமிக்கவும்",
+    close: "மூடு",
 
     analysisResults: "பகுப்பாய்வு முடிவுகள்",
     ndviIndex: "NDVI குறியீடு",
@@ -260,6 +266,8 @@ export const translations: Record<Language, Translations> = {
     analyzing: "വിശകലനം ചെയ്യുന്നു...",
     previous: "മുമ്പത്തെ",
     next: "അടുത്തത്",
+    save: "സേവ് ചെയ്യുക",
+    close: "അടയ്ക്കുക",
 
     analysisResults: "വിശകലന ഫലങ്ങൾ",
     ndviIndex: "NDVI സൂചിക",
@@ -334,6 +342,8 @@ export const translations: Record<Language, Translations> = {
     analyzing: "విశ్లేషిస్తోంది...",
     previous: "మునుపటి",
     next: "తదుపరి",
+    save: "సేవ్ చేయండి",
+    close: "మూసివేయండి",
 
     analysisResults: "విశ్లేషణ ఫలితాలు",
     ndviIndex: "NDVI సూచిక",

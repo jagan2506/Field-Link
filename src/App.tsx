@@ -7,7 +7,10 @@ import DataCharts from './components/DataCharts';
 import AlertSection from './components/AlertSection';
 import Footer from './components/Footer';
 import ChatBot from './components/ChatBot';
+import AlertConfigModal from './components/AlertConfigModal';
+import AlertViewModal from './components/AlertViewModal';
 import { generateMockData, SensorData } from './utils/mockData';
+import { generatePDF } from './utils/pdfGenerator';
 import { useLanguage } from './contexts/LanguageContext';
 
 function App() {
@@ -16,6 +19,16 @@ function App() {
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [chatBotMessage, setChatBotMessage] = useState<string>('');
   const [shouldOpenChatBot, setShouldOpenChatBot] = useState(false);
+  const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
+  const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
+  const [alertThresholds, setAlertThresholds] = useState({
+    tempMin: 15,
+    tempMax: 30,
+    moistureMin: 30,
+    moistureMax: 80,
+    phMin: 6.0,
+    phMax: 7.5
+  });
 
   useEffect(() => {
     // Initialize with mock data
@@ -29,6 +42,16 @@ function App() {
 
     return () => clearInterval(interval);
   }, []);
+
+  const handleDownloadReport = () => {
+    if (sensorData) {
+      generatePDF(sensorData, t);
+    }
+  };
+
+  const handleSaveThresholds = (newThresholds: typeof alertThresholds) => {
+    setAlertThresholds(newThresholds);
+  };
 
   if (!sensorData) {
     return (
@@ -102,15 +125,24 @@ function App() {
 
         {/* Action Buttons */}
         <section className="flex flex-wrap gap-4 justify-center">
-          <button className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors">
+          <button 
+            onClick={handleDownloadReport}
+            className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+          >
             <Download className="w-5 h-5" />
             <span>{t.downloadReport}</span>
           </button>
-          <button className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors">
+          <button 
+            onClick={() => setIsConfigModalOpen(true)}
+            className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+          >
             <Settings className="w-5 h-5" />
             <span>{t.configureAlerts}</span>
           </button>
-          <button className="flex items-center space-x-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors">
+          <button 
+            onClick={() => setIsAlertModalOpen(true)}
+            className="flex items-center space-x-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors"
+          >
             <Bell className="w-5 h-5" />
             <span>{t.viewAllAlerts}</span>
           </button>
@@ -125,6 +157,19 @@ function App() {
           setShouldOpenChatBot(false);
           setChatBotMessage('');
         }}
+      />
+      
+      <AlertConfigModal
+        isOpen={isConfigModalOpen}
+        onClose={() => setIsConfigModalOpen(false)}
+        thresholds={alertThresholds}
+        onSave={handleSaveThresholds}
+      />
+      
+      <AlertViewModal
+        isOpen={isAlertModalOpen}
+        onClose={() => setIsAlertModalOpen(false)}
+        sensorData={sensorData!}
       />
     </div>
   );
