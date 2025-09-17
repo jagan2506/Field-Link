@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Mic, Volume2, X, Globe } from 'lucide-react';
+import { plantsDatabase, getWeatherForecast, findPlantByName, findDiseaseRemedies } from '../utils/agricultureDatabase';
 
 interface Message {
   text: string;
@@ -85,17 +86,22 @@ const ChatBot: React.FC = () => {
       const voices = speechSynthesis.getVoices();
       const targetLang = languages[selectedLanguage as keyof typeof languages].code;
       
-      // Find voice for specific language
-      const localVoice = voices.find(voice => 
+      // Find Indian female voice or closest match
+      const indianFemaleVoice = voices.find(voice => 
+        (voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0])) &&
+        (voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman') || 
+         voice.name.toLowerCase().includes('indian') || voice.name.toLowerCase().includes('hindi'))
+      ) || voices.find(voice => 
         voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0])
       );
       
-      if (localVoice) {
-        utterance.voice = localVoice;
+      if (indianFemaleVoice) {
+        utterance.voice = indianFemaleVoice;
       }
       
-      utterance.rate = 0.8;
-      utterance.pitch = 1.2;
+      utterance.rate = 0.7;
+      utterance.pitch = 1.3;
+      utterance.volume = 0.9;
       speechSynthesis.speak(utterance);
     }
   };
@@ -104,11 +110,64 @@ const ChatBot: React.FC = () => {
     const lang = selectedLanguage as keyof typeof responses;
     const lowerInput = input.toLowerCase();
     
+    // Weather and rain queries
+    if (lowerInput.includes('weather') || lowerInput.includes('rain') || lowerInput.includes('climate') || 
+        lowerInput.includes('வானிலை') || lowerInput.includes('மழை') || lowerInput.includes('వాతావరణం') || 
+        lowerInput.includes('వర్షం') || lowerInput.includes('കാലാവസ്ഥ') || lowerInput.includes('മഴ')) {
+      const weather = getWeatherForecast();
+      const weatherResponses = {
+        english: `Today's forecast: ${weather.rainProbability}% rain probability, ${weather.temperature}°C temperature, ${weather.humidity}% humidity. ${weather.recommendation}`,
+        tamil: `இன்றைய வானிலை: ${weather.rainProbability}% மழை வாய்ப்பு, ${weather.temperature}°C வெப்பநிலை, ${weather.humidity}% ஈரப்பதம். ${weather.recommendation}`,
+        telugu: `నేటి వాతావరణం: ${weather.rainProbability}% వర్షం అవకాశం, ${weather.temperature}°C ఉష్ణోగ్రత, ${weather.humidity}% తేమ. ${weather.recommendation}`,
+        malayalam: `ഇന്നത്തെ കാലാവസ്ഥ: ${weather.rainProbability}% മഴയ്ക്ക് സാധ്യത, ${weather.temperature}°C താപനില, ${weather.humidity}% ആർദ്രത. ${weather.recommendation}`
+      };
+      return weatherResponses[lang];
+    }
+    
+    // Plant cultivation duration queries
+    const plantNames = ['rice', 'wheat', 'tomato', 'cotton', 'sugarcane', 'maize', 'potato', 'onion', 'chili', 'banana',
+                       'நெல்', 'கோதுமை', 'தக்காளி', 'பருத்தி', 'கரும்பு', 'மக்காச்சோளம்', 'உருளைக்கிழங்கு', 'வெங்காயம்', 'மிளகாய்', 'வாழை',
+                       'వరి', 'గోధుమ', 'టమాటో', 'పత్తి', 'చెరకు', 'మొక్కజొన్న', 'బంగాళాదుంప', 'ఉల్లిపాయ', 'మిర్చి', 'అరటి',
+                       'നെല്ല്', 'ഗോതമ്പ്', 'തക്കാളി', 'പരുത്തി', 'കരിമ്പ്', 'ചോളം', 'ഉരുളക്കിഴങ്ങ്', 'ഉള്ളി', 'മുളക്', 'വാഴ'];
+    
+    for (const plantName of plantNames) {
+      if (lowerInput.includes(plantName)) {
+        const plant = findPlantByName(plantName);
+        if (plant) {
+          const plantResponses = {
+            english: `${plant.name} cultivation takes ${plant.cultivationDuration}. Best seasons: ${plant.seasons.join(', ')}. Main diseases: ${plant.diseases.map(d => d.name).join(', ')}.`,
+            tamil: `${plant.name} சாகுபடி ${plant.cultivationDuration} எடுக்கும். சிறந்த பருவங்கள்: ${plant.seasons.join(', ')}. முக்கிய நோய்கள்: ${plant.diseases.map(d => d.name).join(', ')}.`,
+            telugu: `${plant.name} సాగు ${plant.cultivationDuration} పడుతుంది. మంచి సీజన్లు: ${plant.seasons.join(', ')}. ముఖ్య వ్యాధులు: ${plant.diseases.map(d => d.name).join(', ')}.`,
+            malayalam: `${plant.name} കൃഷി ${plant.cultivationDuration} എടുക്കും. നല്ല സീസണുകൾ: ${plant.seasons.join(', ')}. പ്രധാന രോഗങ്ങൾ: ${plant.diseases.map(d => d.name).join(', ')}.`
+          };
+          return plantResponses[lang];
+        }
+      }
+    }
+    
+    // Disease remedy queries
+    const diseaseNames = ['blast', 'blight', 'rust', 'wilt', 'rot', 'spot', 'bollworm', 'anthracnose', 'panama',
+                         'நோய்', 'பூஞ்சை', 'வாடல்', 'புள்ளி', 'కుళ్ళు', 'వ్యాధి', 'తెగులు', 'രോഗം', 'പുള്ളി', 'വാടൽ'];
+    
+    for (const diseaseName of diseaseNames) {
+      if (lowerInput.includes(diseaseName)) {
+        const diseases = findDiseaseRemedies(diseaseName);
+        if (diseases.length > 0) {
+          const disease = diseases[0];
+          const diseaseResponses = {
+            english: `${disease.name} symptoms: ${disease.symptoms.join(', ')}. Remedies: ${disease.remedies.join(', ')}. Prevention: ${disease.prevention.join(', ')}.`,
+            tamil: `${disease.name} அறிகுறிகள்: ${disease.symptoms.join(', ')}. தீர்வுகள்: ${disease.remedies.join(', ')}. தடுப்பு: ${disease.prevention.join(', ')}.`,
+            telugu: `${disease.name} లక్షణాలు: ${disease.symptoms.join(', ')}. చికిత్సలు: ${disease.remedies.join(', ')}. నివారణ: ${disease.prevention.join(', ')}.`,
+            malayalam: `${disease.name} ലക്ഷണങ്ങൾ: ${disease.symptoms.join(', ')}. പരിഹാരങ്ങൾ: ${disease.remedies.join(', ')}. പ്രതിരോധം: ${disease.prevention.join(', ')}.`
+          };
+          return diseaseResponses[lang];
+        }
+      }
+    }
+    
+    // Default responses for other queries
     if (lowerInput.includes('crop') || lowerInput.includes('health') || lowerInput.includes('பயிர்') || lowerInput.includes('పంట') || lowerInput.includes('വിള')) {
       return responses[lang].cropHealth;
-    }
-    if (lowerInput.includes('weather') || lowerInput.includes('climate') || lowerInput.includes('வானிலை') || lowerInput.includes('వాతావరణం') || lowerInput.includes('കാലാവസ്ഥ')) {
-      return responses[lang].weather;
     }
     if (lowerInput.includes('water') || lowerInput.includes('irrigation') || lowerInput.includes('நீர்') || lowerInput.includes('నీరు') || lowerInput.includes('വെള്ളം')) {
       return responses[lang].irrigation;
