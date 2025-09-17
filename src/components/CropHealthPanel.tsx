@@ -111,16 +111,10 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
       };
       
       const remedyMessage = currentAnalysis.diseaseDetected 
-        ? `Disease detected: ${currentAnalysis.diseaseName} with ${currentAnalysis.severity} severity. NDVI: ${currentAnalysis.ndvi}, Confidence: ${currentAnalysis.confidence}%. Please provide detailed treatment remedies, prevention steps, and care instructions for this plant disease.`
-        : `Plant appears healthy with NDVI ${currentAnalysis.ndvi}. Please provide maintenance tips and preventive care suggestions to keep the plant healthy.`;
+        ? `Provide detailed treatment remedies and care instructions for ${currentAnalysis.diseaseName} disease with ${currentAnalysis.severity} severity detected in this plant image.`
+        : `Provide maintenance tips and preventive care suggestions for this healthy plant with NDVI ${currentAnalysis.ndvi}.`;
       
       onOpenChatBot(remedyMessage, analysisData);
-    }
-  };
-  
-  const handleGetRemedies = () => {
-    if (analysisComplete) {
-      setShowLanguageDialog(true);
     }
   };
   
@@ -363,30 +357,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
             </ul>
           </div>
           
-          {/* Get Detailed Remedies Button */}
-          {currentAnalysis && (
-            <div className="mt-6 text-center">
-              <button
-                onClick={handleGetRemedies}
-                className={`px-6 py-3 rounded-lg font-semibold transition-colors ${
-                  currentAnalysis.diseaseDetected 
-                    ? 'bg-red-600 hover:bg-red-700 text-white' 
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {currentAnalysis.diseaseDetected 
-                  ? t.getDetailedTreatment
-                  : t.getCareTips
-                }
-              </button>
-              <p className="text-sm text-gray-600 mt-2">
-                {currentAnalysis.diseaseDetected 
-                  ? 'Get AI-powered treatment recommendations and step-by-step care instructions'
-                  : 'Get personalized care tips to maintain optimal plant health'
-                }
-              </p>
-            </div>
-          )}
+
         </div>
       </div>
     </section>
