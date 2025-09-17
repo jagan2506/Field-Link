@@ -9,7 +9,7 @@ interface CropHealthPanelProps {
 const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
-  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [analysisResults, setAnalysisResults] = useState<{[key: number]: any}>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
@@ -22,27 +22,43 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
   const images = capturedImages.length > 0 
     ? capturedImages.map((url, index) => ({ type: `Captured ${index + 1}`, url }))
     : defaultImages;
+    
+  const currentAnalysis = analysisResults[currentImage];
 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   
-  const analyzeImage = async (imageData: string) => {
+  const analyzeImage = async (imageData: string, imageIndex: number) => {
     setIsAnalyzing(true);
     
     // Simulate multispectral analysis
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Mock analysis results based on image characteristics
+    // Generate more realistic analysis based on image content simulation
+    const greenPixels = Math.random(); // Simulate green pixel analysis
+    const leafHealth = greenPixels > 0.6 ? 'Healthy' : greenPixels > 0.3 ? 'Moderate' : 'Poor';
+    const diseaseProb = leafHealth === 'Poor' ? 0.8 : leafHealth === 'Moderate' ? 0.4 : 0.1;
+    
+    const diseaseDetected = Math.random() < diseaseProb;
+    const diseases = ['Leaf Spot', 'Blight', 'Rust', 'Powdery Mildew'];
+    const selectedDisease = diseases[Math.floor(Math.random() * diseases.length)];
+    const severity = leafHealth === 'Poor' && diseaseDetected ? (Math.random() > 0.5 ? 'Severe' : 'Moderate') : 
+                     leafHealth === 'Moderate' && diseaseDetected ? 'Mild' : 'None';
+    
     const mockResults = {
-      ndvi: (Math.random() * 0.4 + 0.4).toFixed(2), // 0.4-0.8
-      diseaseDetected: Math.random() > 0.7,
-      diseaseName: ['Leaf Spot', 'Blight', 'Rust', 'Healthy'][Math.floor(Math.random() * 4)],
-      confidence: (Math.random() * 30 + 70).toFixed(1), // 70-100%
-      chlorophyll: ['High', 'Medium', 'Low'][Math.floor(Math.random() * 3)],
-      healthStatus: Math.random() > 0.5 ? 'Healthy' : Math.random() > 0.5 ? 'Moderate' : 'Poor'
+      ndvi: leafHealth === 'Healthy' ? (0.7 + Math.random() * 0.2).toFixed(2) : 
+            leafHealth === 'Moderate' ? (0.4 + Math.random() * 0.3).toFixed(2) : 
+            (0.2 + Math.random() * 0.2).toFixed(2),
+      diseaseDetected,
+      diseaseName: diseaseDetected ? selectedDisease : 'Healthy',
+      severity,
+      confidence: (Math.random() * 20 + 80).toFixed(1), // 80-100%
+      chlorophyll: leafHealth === 'Healthy' ? 'High' : leafHealth === 'Moderate' ? 'Medium' : 'Low',
+      healthStatus: leafHealth,
+      urgency: severity === 'Severe' ? 'URGENT' : severity === 'Moderate' ? 'Soon' : 'Monitor'
     };
     
-    setAnalysisResults(mockResults);
+    setAnalysisResults(prev => ({ ...prev, [imageIndex]: mockResults }));
     setIsAnalyzing(false);
   };
   
@@ -52,9 +68,10 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
       const reader = new FileReader();
       reader.onload = (e) => {
         const imageData = e.target?.result as string;
+        const newIndex = capturedImages.length;
         setCapturedImages(prev => [...prev, imageData]);
-        setCurrentImage(capturedImages.length);
-        analyzeImage(imageData);
+        setCurrentImage(newIndex);
+        analyzeImage(imageData, newIndex);
       };
       reader.readAsDataURL(file);
     }
@@ -147,30 +164,32 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">NDVI Index</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {analysisResults?.ndvi || cropHealth.ndvi}
+                  {currentAnalysis?.ndvi || cropHealth.ndvi}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">Overall Health</p>
                 <p className={`text-2xl font-bold ${
-                  (analysisResults?.healthStatus || cropHealth.status) === 'Healthy' ? 'text-green-600' :
-                  (analysisResults?.healthStatus || cropHealth.status) === 'Moderate' ? 'text-orange-600' : 'text-red-600'
+                  (currentAnalysis?.healthStatus || cropHealth.status) === 'Healthy' ? 'text-green-600' :
+                  (currentAnalysis?.healthStatus || cropHealth.status) === 'Moderate' ? 'text-orange-600' : 'text-red-600'
                 }`}>
-                  {analysisResults?.healthStatus || cropHealth.status}
+                  {currentAnalysis?.healthStatus || cropHealth.status}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">Chlorophyll</p>
                 <p className="text-2xl font-bold text-blue-600">
-                  {analysisResults?.chlorophyll || cropHealth.chlorophyllLevel}
+                  {currentAnalysis?.chlorophyll || cropHealth.chlorophyllLevel}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">Disease Status</p>
                 <p className={`text-lg font-bold ${
-                  analysisResults?.diseaseDetected ? 'text-red-600' : 'text-green-600'
+                  currentAnalysis?.severity === 'Severe' ? 'text-red-600' :
+                  currentAnalysis?.severity === 'Moderate' ? 'text-orange-600' :
+                  currentAnalysis?.diseaseDetected ? 'text-yellow-600' : 'text-green-600'
                 }`}>
-                  {analysisResults ? (analysisResults.diseaseDetected ? analysisResults.diseaseName : 'Healthy') : 'Not Analyzed'}
+                  {currentAnalysis ? (currentAnalysis.diseaseDetected ? `${currentAnalysis.diseaseName} (${currentAnalysis.severity})` : 'Healthy') : 'Not Analyzed'}
                 </p>
               </div>
             </div>
@@ -182,13 +201,24 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
               <h4 className="font-semibold text-gray-800">Key Insights</h4>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
-              {analysisResults ? (
+              {currentAnalysis ? (
                 <>
-                  <li>• AI analysis confidence: {analysisResults.confidence}%</li>
-                  <li>• NDVI value of {analysisResults.ndvi} indicates {analysisResults.healthStatus.toLowerCase()} condition</li>
-                  <li>• {analysisResults.diseaseDetected ? `Disease detected: ${analysisResults.diseaseName}` : 'No disease symptoms detected'}</li>
-                  <li>• Chlorophyll level: {analysisResults.chlorophyll}</li>
-                  {analysisResults.diseaseDetected && <li>• Recommend immediate treatment and monitoring</li>}
+                  <li>• AI analysis confidence: {currentAnalysis.confidence}%</li>
+                  <li>• NDVI value of {currentAnalysis.ndvi} indicates {currentAnalysis.healthStatus.toLowerCase()} condition</li>
+                  <li>• {currentAnalysis.diseaseDetected ? `Disease detected: ${currentAnalysis.diseaseName} (${currentAnalysis.severity} severity)` : 'No disease symptoms detected'}</li>
+                  <li>• Chlorophyll level: {currentAnalysis.chlorophyll}</li>
+                  {currentAnalysis.severity === 'Severe' && (
+                    <li className="text-red-600 font-bold">⚠️ URGENT: Severe infection detected! Immediate treatment required within 24-48 hours to prevent crop loss.</li>
+                  )}
+                  {currentAnalysis.severity === 'Moderate' && (
+                    <li className="text-orange-600 font-semibold">⚠️ Treatment needed soon (within 3-5 days) to prevent disease spread.</li>
+                  )}
+                  {currentAnalysis.severity === 'Mild' && (
+                    <li className="text-yellow-600">• Monitor closely and consider preventive treatment.</li>
+                  )}
+                  {currentAnalysis.diseaseDetected && currentAnalysis.severity !== 'Mild' && (
+                    <li>• Recommended action: {currentAnalysis.urgency === 'URGENT' ? 'Apply fungicide immediately, isolate affected plants' : 'Schedule treatment application, increase monitoring frequency'}</li>
+                  )}
                 </>
               ) : (
                 <>
