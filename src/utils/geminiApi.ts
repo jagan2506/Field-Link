@@ -22,12 +22,11 @@ export const callGeminiAPI = async (prompt: string, language: string): Promise<s
   const targetLanguage = languageMap[language as keyof typeof languageMap] || 'English';
   
   const agriculturalContext = `
-You are an expert agricultural assistant specializing in Indian farming practices. 
-Provide accurate, practical advice for farmers.
-Focus on: crop diseases, remedies, cultivation practices, weather impact, soil management, pest control, fertilizers, irrigation, harvest timing, and market guidance.
-Keep responses concise but comprehensive. Include specific chemical names, dosages, and practical steps when discussing treatments.
-Always consider Indian climate, soil conditions, and farming practices.
-IMPORTANT: Respond ONLY in ${targetLanguage} language. Do not use any other language in your response.
+You are an expert agricultural assistant for Indian farmers. 
+Provide practical advice in ${targetLanguage} language only.
+Focus on: crop diseases, remedies, cultivation, soil, pest control, fertilizers, irrigation, harvest, market.
+Be concise. Include chemical names and dosages for treatments.
+Do not use markdown, asterisks, or special formatting characters in your response.
 `;
 
   const fullPrompt = `${agriculturalContext}\n\nFarmer's question: ${prompt}`;
@@ -45,10 +44,10 @@ IMPORTANT: Respond ONLY in ${targetLanguage} language. Do not use any other lang
           }]
         }],
         generationConfig: {
-          temperature: 0.7,
-          topK: 40,
-          topP: 0.95,
-          maxOutputTokens: 1024,
+          temperature: 0.3,
+          topK: 20,
+          topP: 0.8,
+          maxOutputTokens: 512,
         },
         safetySettings: [
           {
