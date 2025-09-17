@@ -25,31 +25,55 @@ const ChatBot: React.FC = () => {
   const responses = {
     english: {
       greeting: "Hello! I'm your agricultural assistant. How can I help you today?",
-      cropHealth: "Your crops are showing healthy growth with good NDVI values.",
-      weather: "Current weather conditions are favorable for your crops.",
-      irrigation: "Soil moisture levels suggest watering in 2-3 hours.",
-      default: "I'm here to help with your farming questions!"
+      cropHealth: "Your crops show healthy growth with NDVI 0.75. Green leaves indicate good chlorophyll levels.",
+      weather: "Temperature 24°C, humidity 65%. Perfect conditions for crop growth today.",
+      irrigation: "Soil moisture at 45%. Water needed in 2 hours for optimal growth.",
+      fertilizer: "NPK levels are balanced. Consider organic compost for better soil health.",
+      pests: "No pest activity detected. Continue regular monitoring for early detection.",
+      harvest: "Crops will be ready for harvest in 3-4 weeks based on current growth rate.",
+      soil: "Soil pH is 6.8 - ideal for most crops. Maintain current soil management.",
+      seeds: "Use certified seeds for better yield. Soak seeds 12 hours before planting.",
+      market: "Current market price for your crop is ₹25/kg. Good time to plan harvest.",
+      default: "I'm here to help with crops, weather, irrigation, fertilizers, pests, harvest, soil, seeds, and market prices!"
     },
     tamil: {
       greeting: "வணக்கம்! நான் உங்கள் விவசாய உதவியாளர். இன்று நான் எப்படி உதவ முடியும்?",
-      cropHealth: "உங்கள் பயிர்கள் நல்ல NDVI மதிப்புகளுடன் ஆரோக்கியமான வளர்ச்சியைக் காட்டுகின்றன.",
-      weather: "தற்போதைய வானிலை நிலைமைகள் உங்கள் பயிர்களுக்கு சாதகமாக உள்ளன.",
-      irrigation: "மண்ணின் ஈரப்பதம் 2-3 மணி நேரத்தில் நீர்ப்பாசனம் தேவை என்று கூறுகிறது.",
-      default: "உங்கள் விவசாய கேள்விகளுக்கு உதவ நான் இங்கே இருக்கிறேன்!"
+      cropHealth: "உங்கள் பயிர்கள் NDVI 0.75 உடன் ஆரோக்கியமான வளர்ச்சி. பச்சை இலைகள் நல்ல குளோரோபில் அளவைக் காட்டுகின்றன.",
+      weather: "வெப்பநிலை 24°C, ஈரப்பதம் 65%. இன்று பயிர் வளர்ச்சிக்கு சரியான சூழல்.",
+      irrigation: "மண் ஈரப்பதம் 45%. சிறந்த வளர்ச்சிக்கு 2 மணி நேரத்தில் நீர் தேவை.",
+      fertilizer: "NPK அளவுகள் சமநிலையில் உள்ளன. மண் ஆரோக்கியத்திற்கு இயற்கை உரம் பயன்படுத்துங்கள்.",
+      pests: "பூச்சி தாக்குதல் இல்லை. ஆரம்ப கண்டறிதலுக்கு தொடர்ந்து கண்காணிக்கவும்.",
+      harvest: "தற்போதைய வளர்ச்சி விகிதத்தின் அடிப்படையில் 3-4 வாரங்களில் அறுவடை தயார்.",
+      soil: "மண் pH 6.8 - பெரும்பாலான பயிர்களுக்கு ஏற்றது. தற்போதைய மண் நிர்வாகத்தை தொடரவும்.",
+      seeds: "அதிக மகசூலுக்கு சான்றிதழ் பெற்ற விதைகளைப் பயன்படுத்துங்கள். நடவுக்கு முன் 12 மணி நேரம் ஊறவைக்கவும்.",
+      market: "உங்கள் பயிருக்கு தற்போதைய சந்தை விலை ₹25/கிலோ. அறுவடை திட்டமிட நல்ல நேரம்.",
+      default: "பயிர்கள், வானிலை, நீர்ப்பாசனம், உரங்கள், பூச்சிகள், அறுவடை, மண், விதைகள், சந்தை விலைகளில் உதவ நான் இங்கே இருக்கிறேன்!"
     },
     telugu: {
       greeting: "నమస్కారం! నేను మీ వ్యవసాయ సహాయకుడను. ఈరోజు నేను ఎలా సహాయం చేయగలను?",
-      cropHealth: "మీ పంటలు మంచి NDVI విలువలతో ఆరోగ్యకరమైన పెరుగుదలను చూపిస్తున్నాయి.",
-      weather: "ప్రస్తుత వాతావరణ పరిస్థితులు మీ పంటలకు అనుకూలంగా ఉన్నాయి.",
-      irrigation: "మట్టి తేమ స్థాయిలు 2-3 గంటల్లో నీటిపారుదల అవసరమని సూచిస్తున్నాయి.",
-      default: "మీ వ్యవసాయ ప్రశ్నలకు సహాయం చేయడానికి నేను ఇక్కడ ఉన్నాను!"
+      cropHealth: "మీ పంటలు NDVI 0.75తో ఆరోగ్యకరమైన పెరుగుదల. ఆకుపచ్చ ఆకులు మంచి క్లోరోఫిల్ స్థాయిలను చూపుతున్నాయి.",
+      weather: "ఉష్ణోగ్రత 24°C, తేమ 65%. ఈరోజు పంట పెరుగుదలకు అనుకూల పరిస్థితులు.",
+      irrigation: "మట్టి తేమ 45%. మంచి పెరుగుదలకు 2 గంటల్లో నీరు అవసరం.",
+      fertilizer: "NPK స్థాయిలు సమతుల్యంగా ఉన్నాయి. మట్టి ఆరోగ్యం కోసం సేంద్రీయ ఎరువులు వాడండి.",
+      pests: "చీడపీడల కార్యకలాపాలు లేవు. ముందస్తు గుర్తింపు కోసం క్రమం తప్పకుండా పర్యవేక్షించండి.",
+      harvest: "ప్రస్తుత పెరుగుదల రేటు ఆధారంగా 3-4 వారాల్లో పంటలు కోతకు సిద్ధం.",
+      soil: "మట్టి pH 6.8 - చాలా పంటలకు అనువైనది. ప్రస్తుత మట్టి నిర్వహణను కొనసాగించండి.",
+      seeds: "మంచి దిగుబడి కోసం ధృవీకరించబడిన విత్తనాలు వాడండి. నాటడానికి ముందు 12 గంటలు నానబెట్టండి.",
+      market: "మీ పంటకు ప్రస్తుత మార్కెట్ ధర ₹25/కిలో. కోత ప్లాన్ చేయడానికి మంచి సమయం.",
+      default: "పంటలు, వాతావరణం, నీటిపారుదల, ఎరువులు, చీడపీడలు, కోత, మట్టి, విత్తనాలు, మార్కెట్ ధరలలో సహాయం చేయడానికి నేను ఇక్కడ ఉన్నాను!"
     },
     malayalam: {
       greeting: "നമസ്കാരം! ഞാൻ നിങ്ങളുടെ കാർഷിക സഹായിയാണ്. ഇന്ന് എനിക്ക് എങ്ങനെ സഹായിക്കാം?",
-      cropHealth: "നിങ്ങളുടെ വിളകൾ നല്ല NDVI മൂല്യങ്ങളോടെ ആരോഗ്യകരമായ വളർച്ച കാണിക്കുന്നു.",
-      weather: "നിലവിലെ കാലാവസ്ഥാ സാഹചര്യങ്ങൾ നിങ്ങളുടെ വിളകൾക്ക് അനുകൂലമാണ്.",
-      irrigation: "മണ്ണിന്റെ ഈർപ്പം 2-3 മണിക്കൂറിനുള്ളിൽ നനയ്ക്കേണ്ടതുണ്ടെന്ന് സൂചിപ്പിക്കുന്നു.",
-      default: "നിങ്ങളുടെ കാർഷിക ചോദ്യങ്ങളിൽ സഹായിക്കാൻ ഞാൻ ഇവിടെയുണ്ട്!"
+      cropHealth: "നിങ്ങളുടെ വിളകൾ NDVI 0.75 ഉം ആരോഗ്യകരമായ വളർച്ച കാണിക്കുന്നു. പച്ച ഇലകൾ നല്ല ക്ലോറോഫിൽ അളവ് സൂചിപ്പിക്കുന്നു.",
+      weather: "താപനില 24°C, ആർദ്രത 65%. ഇന്ന് വിള വളർച്ചയ്ക്ക് അനുയോജ്യമായ അവസ്ഥകൾ.",
+      irrigation: "മണ്ണിന്റെ ഈർപ്പം 45%. മികച്ച വളർച്ചയ്ക്ക് 2 മണിക്കൂറിനുള്ളിൽ വെള്ളം ആവശ്യം.",
+      fertilizer: "NPK അളവുകൾ സമതുലിതമാണ്. മണ്ണിന്റെ ആരോഗ്യത്തിന് ജൈവ കമ്പോസ്റ്റ് ഉപയോഗിക്കുക.",
+      pests: "കീടങ്ങളുടെ പ്രവർത്തനം കണ്ടെത്തിയില്ല. നേരത്തെ കണ്ടെത്തുന്നതിന് പതിവ് നിരീക്ഷണം തുടരുക.",
+      harvest: "നിലവിലെ വളർച്ചാ നിരക്ക് അടിസ്ഥാനമാക്കി 3-4 ആഴ്ചകൾക്കുള്ളിൽ വിളകൾ വിളവെടുപ്പിന് തയ്യാറാകും.",
+      soil: "മണ്ണിന്റെ pH 6.8 - മിക്ക വിളകൾക്കും അനുയോജ്യം. നിലവിലെ മണ്ണ് പരിപാലനം തുടരുക.",
+      seeds: "മികച്ച വിളവിനായി സാക്ഷ്യപ്പെടുത്തിയ വിത്തുകൾ ഉപയോഗിക്കുക. നടുന്നതിന് മുമ്പ് 12 മണിക്കൂർ കുതിർക്കുക.",
+      market: "നിങ്ങളുടെ വിളയുടെ നിലവിലെ വിപണി വില ₹25/കിലോ. വിളവെടുപ്പ് ആസൂത്രണം ചെയ്യാൻ നല്ല സമയം.",
+      default: "വിളകൾ, കാലാവസ്ഥ, ജലസേചനം, വളങ്ങൾ, കീടങ്ങൾ, വിളവെടുപ്പ്, മണ്ണ്, വിത്തുകൾ, വിപണി വിലകൾ എന്നിവയിൽ സഹായിക്കാൻ ഞാൻ ഇവിടെയുണ്ട്!"
     }
   };
 
@@ -83,11 +107,29 @@ const ChatBot: React.FC = () => {
     if (lowerInput.includes('crop') || lowerInput.includes('health') || lowerInput.includes('பயிர்') || lowerInput.includes('పంట') || lowerInput.includes('വിള')) {
       return responses[lang].cropHealth;
     }
-    if (lowerInput.includes('weather') || lowerInput.includes('வானிலை') || lowerInput.includes('వాతావరణం') || lowerInput.includes('കാലാവസ്ഥ')) {
+    if (lowerInput.includes('weather') || lowerInput.includes('climate') || lowerInput.includes('வானிலை') || lowerInput.includes('వాతావరణం') || lowerInput.includes('കാലാവസ്ഥ')) {
       return responses[lang].weather;
     }
     if (lowerInput.includes('water') || lowerInput.includes('irrigation') || lowerInput.includes('நீர்') || lowerInput.includes('నీరు') || lowerInput.includes('വെള്ളം')) {
       return responses[lang].irrigation;
+    }
+    if (lowerInput.includes('fertilizer') || lowerInput.includes('nutrient') || lowerInput.includes('உரம்') || lowerInput.includes('ఎరువు') || lowerInput.includes('വള')) {
+      return responses[lang].fertilizer;
+    }
+    if (lowerInput.includes('pest') || lowerInput.includes('insect') || lowerInput.includes('பூச்சி') || lowerInput.includes('చీడ') || lowerInput.includes('കീട')) {
+      return responses[lang].pests;
+    }
+    if (lowerInput.includes('harvest') || lowerInput.includes('yield') || lowerInput.includes('அறுவடை') || lowerInput.includes('కోత') || lowerInput.includes('വിളവെടുപ്പ്')) {
+      return responses[lang].harvest;
+    }
+    if (lowerInput.includes('soil') || lowerInput.includes('ph') || lowerInput.includes('மண்') || lowerInput.includes('మట్టి') || lowerInput.includes('മണ്ണ്')) {
+      return responses[lang].soil;
+    }
+    if (lowerInput.includes('seed') || lowerInput.includes('plant') || lowerInput.includes('விதை') || lowerInput.includes('విత్తన') || lowerInput.includes('വിത്ത്')) {
+      return responses[lang].seeds;
+    }
+    if (lowerInput.includes('market') || lowerInput.includes('price') || lowerInput.includes('சந்தை') || lowerInput.includes('మార్కెట్') || lowerInput.includes('വിപണി')) {
+      return responses[lang].market;
     }
     return responses[lang].default;
   };
@@ -119,14 +161,44 @@ const ChatBot: React.FC = () => {
 
   const startListening = () => {
     if ('webkitSpeechRecognition' in window) {
+      // Stop any ongoing speech synthesis
+      speechSynthesis.cancel();
+      
       const recognition = new (window as any).webkitSpeechRecognition();
       recognition.lang = languages[selectedLanguage as keyof typeof languages].code;
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      
       recognition.onstart = () => setIsListening(true);
       recognition.onresult = (event: any) => {
-        setInputText(event.results[0][0].transcript);
+        const transcript = event.results[0][0].transcript;
+        setInputText(transcript);
         setIsListening(false);
+        // Auto-send the message after speech recognition
+        setTimeout(() => {
+          if (transcript.trim()) {
+            const userMessage: Message = {
+              text: transcript,
+              isUser: true,
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, userMessage]);
+            
+            setTimeout(() => {
+              const botResponse = getResponse(transcript);
+              const botMessage: Message = {
+                text: botResponse,
+                isUser: false,
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, botMessage]);
+              speakText(botResponse);
+            }, 500);
+          }
+        }, 100);
       };
       recognition.onerror = () => setIsListening(false);
+      recognition.onend = () => setIsListening(false);
       recognition.start();
     }
   };
