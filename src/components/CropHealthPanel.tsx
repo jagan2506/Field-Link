@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Eye, Camera, Zap, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { CropHealthData } from '../utils/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
+import { analyzeImageForDisease } from '../utils/imageAnalysis';
 
 interface CropHealthPanelProps {
   cropHealth: CropHealthData;
@@ -36,43 +37,31 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
   const analyzeImage = async (imageData: string, imageIndex: number) => {
     setIsAnalyzing(true);
     
-    // Simulate multispectral analysis
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    // Generate more realistic analysis based on image content simulation
-    const greenPixels = Math.random(); // Simulate green pixel analysis
-    const leafHealth = greenPixels > 0.6 ? 'Healthy' : greenPixels > 0.3 ? 'Moderate' : 'Poor';
-    const diseaseProb = leafHealth === 'Poor' ? 0.8 : leafHealth === 'Moderate' ? 0.4 : 0.1;
-    
-    const diseaseDetected = Math.random() < diseaseProb;
-    const diseases = ['Leaf Spot', 'Blight', 'Rust', 'Powdery Mildew'];
-    const selectedDisease = diseases[Math.floor(Math.random() * diseases.length)];
-    const severity = leafHealth === 'Poor' && diseaseDetected ? (Math.random() > 0.5 ? 'Severe' : 'Moderate') : 
-                     leafHealth === 'Moderate' && diseaseDetected ? 'Mild' : 'None';
-    
-    const remedies = {
-      'Leaf Spot': ['Apply Mancozeb 75% WP @ 2g/L', 'Remove affected leaves', 'Improve air circulation'],
-      'Blight': ['Spray Copper oxychloride @ 3g/L', 'Apply Metalaxyl + Mancozeb @ 2g/L', 'Ensure proper drainage'],
-      'Rust': ['Use Propiconazole 25% EC @ 1ml/L', 'Apply Tebuconazole @ 0.1%', 'Avoid overhead irrigation'],
-      'Powdery Mildew': ['Spray Sulfur 80% WP @ 2g/L', 'Apply Carbendazim 50% WP @ 1g/L', 'Reduce humidity']
-    };
-    
-    const mockResults = {
-      ndvi: leafHealth === 'Healthy' ? (0.7 + Math.random() * 0.2).toFixed(2) : 
-            leafHealth === 'Moderate' ? (0.4 + Math.random() * 0.3).toFixed(2) : 
-            (0.2 + Math.random() * 0.2).toFixed(2),
-      diseaseDetected,
-      diseaseName: diseaseDetected ? selectedDisease : 'Healthy',
-      severity,
-      confidence: (Math.random() * 20 + 80).toFixed(1), // 80-100%
-      chlorophyll: leafHealth === 'Healthy' ? 'High' : leafHealth === 'Moderate' ? 'Medium' : 'Low',
-      healthStatus: leafHealth,
-      urgency: severity === 'Severe' ? 'URGENT' : severity === 'Moderate' ? 'Soon' : 'Monitor',
-      remedies: diseaseDetected ? remedies[selectedDisease as keyof typeof remedies] || [] : []
-    };
-    
-    setAnalysisResults(prev => ({ ...prev, [imageIndex]: mockResults }));
-    setIsAnalyzing(false);
+    try {
+      // Analyze the actual captured image
+      const analysisResults = await analyzeImageForDisease(imageData);
+      
+      const remedies = {
+        'leaf spot': ['Apply Mancozeb 75% WP @ 2g/L', 'Remove affected leaves', 'Improve air circulation'],
+        'blight': ['Spray Copper oxychloride @ 3g/L', 'Apply Metalaxyl + Mancozeb @ 2g/L', 'Ensure proper drainage'],
+        'rust': ['Use Propiconazole 25% EC @ 1ml/L', 'Apply Tebuconazole @ 0.1%', 'Avoid overhead irrigation'],
+        'powdery mildew': ['Spray Sulfur 80% WP @ 2g/L', 'Apply Carbendazim 50% WP @ 1g/L', 'Reduce humidity']
+      };
+      
+      const finalResults = {
+        ...analysisResults,
+        urgency: analysisResults.severity === 'Severe' ? 'URGENT' : 
+                analysisResults.severity === 'Moderate' ? 'Soon' : 'Monitor',
+        remedies: analysisResults.diseaseDetected ? 
+                 remedies[analysisResults.diseaseName.toLowerCase() as keyof typeof remedies] || [] : []
+      };
+      
+      setAnalysisResults(prev => ({ ...prev, [imageIndex]: finalResults }));
+    } catch (error) {
+      console.error('Image analysis failed:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleImageCapture = (event: React.ChangeEvent<HTMLInputElement>) => {

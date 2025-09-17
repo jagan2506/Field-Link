@@ -171,20 +171,30 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldO
       const medicineResponse = formatMedicineResponse(medicines, detectedLang);
       
       try {
-        // Create enhanced prompt with image analysis data
-        let prompt = input;
+        // Create enhanced prompt with real image analysis data
+        let prompt = `Based on the captured plant image analysis, provide detailed treatment advice in ${detectedLang} language.\n\n${input}`;
+        
         if (analysisData) {
-          prompt += `\n\nImage Analysis Results:
-- NDVI: ${analysisData.ndvi}
-- Health Status: ${analysisData.healthStatus}
-- Disease Detected: ${analysisData.diseaseDetected ? analysisData.diseaseName : 'None'}
-- Severity: ${analysisData.severity || 'N/A'}
-- Chlorophyll Level: ${analysisData.chlorophyll}
-- Confidence: ${analysisData.confidence}%`;
+          prompt += `\n\nActual Image Analysis Results:
+- NDVI Index: ${analysisData.ndvi} (vegetation health indicator)
+- Overall Health Status: ${analysisData.healthStatus}
+- Disease Detection: ${analysisData.diseaseDetected ? `${analysisData.diseaseName} detected` : 'No disease detected'}
+- Disease Severity: ${analysisData.severity}
+- Analysis Confidence: ${analysisData.confidence}%
+- Chlorophyll Level: ${analysisData.chlorophyll}`;
           
           if (analysisData.remedies && analysisData.remedies.length > 0) {
-            prompt += `\n- Quick Remedies: ${analysisData.remedies.join(', ')}`;
+            prompt += `\n- Recommended Treatments: ${analysisData.remedies.join(', ')}`;
           }
+          
+          prompt += `\n\nPlease provide:
+1. Detailed explanation of the detected condition
+2. Step-by-step treatment instructions
+3. Prevention measures
+4. Care tips for recovery
+5. Timeline for expected improvement
+
+Respond in ${detectedLang} language with proper agricultural terminology.`;
         }
         
         prompt += `\n\nMedicine recommendations: ${medicineResponse}`;
