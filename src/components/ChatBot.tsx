@@ -56,13 +56,20 @@ const ChatBot: React.FC = () => {
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      const voices = speechSynthesis.getVoices();
-      const femaleVoice = voices.find(voice => 
-        voice.lang.startsWith(languages[selectedLanguage as keyof typeof languages].code.split('-')[0]) && 
-        voice.name.toLowerCase().includes('female')
-      ) || voices.find(voice => voice.lang.startsWith(languages[selectedLanguage as keyof typeof languages].code.split('-')[0]));
+      utterance.lang = languages[selectedLanguage as keyof typeof languages].code;
       
-      if (femaleVoice) utterance.voice = femaleVoice;
+      const voices = speechSynthesis.getVoices();
+      const targetLang = languages[selectedLanguage as keyof typeof languages].code;
+      
+      // Find voice for specific language
+      const localVoice = voices.find(voice => 
+        voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0])
+      );
+      
+      if (localVoice) {
+        utterance.voice = localVoice;
+      }
+      
       utterance.rate = 0.8;
       utterance.pitch = 1.2;
       speechSynthesis.speak(utterance);
