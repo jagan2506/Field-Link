@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { MessageCircle, Send, Mic, Volume2, X, Globe } from 'lucide-react';
+import { MessageCircle, Send, Mic, Volume2, X, Globe, Bot } from 'lucide-react';
 import { plantsDatabase, getWeatherForecast, findPlantByName, findDiseaseRemedies } from '../utils/agricultureDatabase';
+import { callGeminiAPI } from '../utils/geminiApi';
 
 interface Message {
   text: string;
@@ -14,6 +15,7 @@ const ChatBot: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('english');
   const [isListening, setIsListening] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const languages = {
@@ -106,95 +108,19 @@ const ChatBot: React.FC = () => {
     }
   };
 
-  const getResponse = (input: string): string => {
-    const lang = selectedLanguage as keyof typeof responses;
-    const lowerInput = input.toLowerCase();
-    
-    // Weather and rain queries
-    if (lowerInput.includes('weather') || lowerInput.includes('rain') || lowerInput.includes('climate') || 
-        lowerInput.includes('வானிலை') || lowerInput.includes('மழை') || lowerInput.includes('వాతావరణం') || 
-        lowerInput.includes('వర్షం') || lowerInput.includes('കാലാവസ്ഥ') || lowerInput.includes('മഴ')) {
-      const weather = getWeatherForecast();
-      const weatherResponses = {
-        english: `Today's forecast: ${weather.rainProbability}% rain probability, ${weather.temperature}°C temperature, ${weather.humidity}% humidity. ${weather.recommendation}`,
-        tamil: `இன்றைய வானிலை: ${weather.rainProbability}% மழை வாய்ப்பு, ${weather.temperature}°C வெப்பநிலை, ${weather.humidity}% ஈரப்பதம். ${weather.recommendation}`,
-        telugu: `నేటి వాతావరణం: ${weather.rainProbability}% వర్షం అవకాశం, ${weather.temperature}°C ఉష్ణోగ్రత, ${weather.humidity}% తేమ. ${weather.recommendation}`,
-        malayalam: `ഇന്നത്തെ കാലാവസ്ഥ: ${weather.rainProbability}% മഴയ്ക്ക് സാധ്യത, ${weather.temperature}°C താപനില, ${weather.humidity}% ആർദ്രത. ${weather.recommendation}`
-      };
-      return weatherResponses[lang];
+  const getResponse = async (input: string): Promise<string> => {
+    try {
+      const geminiResponse = await callGeminiAPI(input, selectedLanguage);
+      return geminiResponse;
+    } catch (error) {
+      console.error('Gemini API failed, using fallback:', error);
+      const lang = selectedLanguage as keyof typeof responses;
+      return responses[lang].default;
     }
-    
-    // Plant cultivation duration queries
-    const plantNames = ['rice', 'wheat', 'tomato', 'cotton', 'sugarcane', 'maize', 'potato', 'onion', 'chili', 'banana',
-                       'நெல்', 'கோதுமை', 'தக்காளி', 'பருத்தி', 'கரும்பு', 'மக்காச்சோளம்', 'உருளைக்கிழங்கு', 'வெங்காயம்', 'மிளகாய்', 'வாழை',
-                       'వరి', 'గోధుమ', 'టమాటో', 'పత్తి', 'చెరకు', 'మొక్కజొన్న', 'బంగాళాదుంప', 'ఉల్లిపాయ', 'మిర్చి', 'అరటి',
-                       'നെല്ല്', 'ഗോതമ്പ്', 'തക്കാളി', 'പരുത്തി', 'കരിമ്പ്', 'ചോളം', 'ഉരുളക്കിഴങ്ങ്', 'ഉള്ളി', 'മുളക്', 'വാഴ'];
-    
-    for (const plantName of plantNames) {
-      if (lowerInput.includes(plantName)) {
-        const plant = findPlantByName(plantName);
-        if (plant) {
-          const plantResponses = {
-            english: `${plant.name} cultivation takes ${plant.cultivationDuration}. Best seasons: ${plant.seasons.join(', ')}. Main diseases: ${plant.diseases.map(d => d.name).join(', ')}.`,
-            tamil: `${plant.name} சாகுபடி ${plant.cultivationDuration} எடுக்கும். சிறந்த பருவங்கள்: ${plant.seasons.join(', ')}. முக்கிய நோய்கள்: ${plant.diseases.map(d => d.name).join(', ')}.`,
-            telugu: `${plant.name} సాగు ${plant.cultivationDuration} పడుతుంది. మంచి సీజన్లు: ${plant.seasons.join(', ')}. ముఖ్య వ్యాధులు: ${plant.diseases.map(d => d.name).join(', ')}.`,
-            malayalam: `${plant.name} കൃഷി ${plant.cultivationDuration} എടുക്കും. നല്ല സീസണുകൾ: ${plant.seasons.join(', ')}. പ്രധാന രോഗങ്ങൾ: ${plant.diseases.map(d => d.name).join(', ')}.`
-          };
-          return plantResponses[lang];
-        }
-      }
-    }
-    
-    // Disease remedy queries
-    const diseaseNames = ['blast', 'blight', 'rust', 'wilt', 'rot', 'spot', 'bollworm', 'anthracnose', 'panama',
-                         'நோய்', 'பூஞ்சை', 'வாடல்', 'புள்ளி', 'కుళ్ళు', 'వ్యాధి', 'తెగులు', 'രോഗം', 'പുള്ളി', 'വാടൽ'];
-    
-    for (const diseaseName of diseaseNames) {
-      if (lowerInput.includes(diseaseName)) {
-        const diseases = findDiseaseRemedies(diseaseName);
-        if (diseases.length > 0) {
-          const disease = diseases[0];
-          const diseaseResponses = {
-            english: `${disease.name} symptoms: ${disease.symptoms.join(', ')}. Remedies: ${disease.remedies.join(', ')}. Prevention: ${disease.prevention.join(', ')}.`,
-            tamil: `${disease.name} அறிகுறிகள்: ${disease.symptoms.join(', ')}. தீர்வுகள்: ${disease.remedies.join(', ')}. தடுப்பு: ${disease.prevention.join(', ')}.`,
-            telugu: `${disease.name} లక్షణాలు: ${disease.symptoms.join(', ')}. చికిత్సలు: ${disease.remedies.join(', ')}. నివారణ: ${disease.prevention.join(', ')}.`,
-            malayalam: `${disease.name} ലക്ഷണങ്ങൾ: ${disease.symptoms.join(', ')}. പരിഹാരങ്ങൾ: ${disease.remedies.join(', ')}. പ്രതിരോധം: ${disease.prevention.join(', ')}.`
-          };
-          return diseaseResponses[lang];
-        }
-      }
-    }
-    
-    // Default responses for other queries
-    if (lowerInput.includes('crop') || lowerInput.includes('health') || lowerInput.includes('பயிர்') || lowerInput.includes('పంట') || lowerInput.includes('വിള')) {
-      return responses[lang].cropHealth;
-    }
-    if (lowerInput.includes('water') || lowerInput.includes('irrigation') || lowerInput.includes('நீர்') || lowerInput.includes('నీరు') || lowerInput.includes('വെള്ളം')) {
-      return responses[lang].irrigation;
-    }
-    if (lowerInput.includes('fertilizer') || lowerInput.includes('nutrient') || lowerInput.includes('உரம்') || lowerInput.includes('ఎరువు') || lowerInput.includes('വള')) {
-      return responses[lang].fertilizer;
-    }
-    if (lowerInput.includes('pest') || lowerInput.includes('insect') || lowerInput.includes('பூச்சி') || lowerInput.includes('చీడ') || lowerInput.includes('കീട')) {
-      return responses[lang].pests;
-    }
-    if (lowerInput.includes('harvest') || lowerInput.includes('yield') || lowerInput.includes('அறுவடை') || lowerInput.includes('కోత') || lowerInput.includes('വിളവെടുപ്പ്')) {
-      return responses[lang].harvest;
-    }
-    if (lowerInput.includes('soil') || lowerInput.includes('ph') || lowerInput.includes('மண்') || lowerInput.includes('మట్టి') || lowerInput.includes('മണ്ണ്')) {
-      return responses[lang].soil;
-    }
-    if (lowerInput.includes('seed') || lowerInput.includes('plant') || lowerInput.includes('விதை') || lowerInput.includes('విత్తన') || lowerInput.includes('വിത്ത്')) {
-      return responses[lang].seeds;
-    }
-    if (lowerInput.includes('market') || lowerInput.includes('price') || lowerInput.includes('சந்தை') || lowerInput.includes('మార్కెట్') || lowerInput.includes('വിപണി')) {
-      return responses[lang].market;
-    }
-    return responses[lang].default;
   };
 
-  const sendMessage = () => {
-    if (!inputText.trim()) return;
+  const sendMessage = async () => {
+    if (!inputText.trim() || isLoading) return;
     
     const userMessage: Message = {
       text: inputText,
@@ -203,9 +129,12 @@ const ChatBot: React.FC = () => {
     };
     
     setMessages(prev => [...prev, userMessage]);
+    setIsLoading(true);
+    const currentInput = inputText;
+    setInputText('');
     
-    setTimeout(() => {
-      const botResponse = getResponse(inputText);
+    try {
+      const botResponse = await getResponse(currentInput);
       const botMessage: Message = {
         text: botResponse,
         isUser: false,
@@ -213,9 +142,17 @@ const ChatBot: React.FC = () => {
       };
       setMessages(prev => [...prev, botMessage]);
       speakText(botResponse);
-    }, 1000);
-    
-    setInputText('');
+    } catch (error) {
+      console.error('Error getting response:', error);
+      const errorMessage: Message = {
+        text: responses[selectedLanguage as keyof typeof responses].default,
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const startListening = () => {
@@ -243,15 +180,22 @@ const ChatBot: React.FC = () => {
             };
             setMessages(prev => [...prev, userMessage]);
             
-            setTimeout(() => {
-              const botResponse = getResponse(transcript);
-              const botMessage: Message = {
-                text: botResponse,
-                isUser: false,
-                timestamp: new Date()
-              };
-              setMessages(prev => [...prev, botMessage]);
-              speakText(botResponse);
+            setTimeout(async () => {
+              setIsLoading(true);
+              try {
+                const botResponse = await getResponse(transcript);
+                const botMessage: Message = {
+                  text: botResponse,
+                  isUser: false,
+                  timestamp: new Date()
+                };
+                setMessages(prev => [...prev, botMessage]);
+                speakText(botResponse);
+              } catch (error) {
+                console.error('Error in voice response:', error);
+              } finally {
+                setIsLoading(false);
+              }
             }, 500);
           }
         }, 100);
@@ -313,6 +257,12 @@ const ChatBot: React.FC = () => {
                 <div className={`inline-block p-2 rounded-lg max-w-xs ${
                   message.isUser ? 'bg-green-600 text-white' : 'bg-gray-200 text-gray-800'
                 }`}>
+                  {!message.isUser && (
+                    <div className="flex items-center space-x-1 mb-1">
+                      <Bot className="w-3 h-3 text-green-600" />
+                      <span className="text-xs text-green-600 font-medium">AI Assistant</span>
+                    </div>
+                  )}
                   {message.text}
                   {!message.isUser && (
                     <button
@@ -334,7 +284,8 @@ const ChatBot: React.FC = () => {
                 type="text"
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                onKeyPress={(e) => e.key === 'Enter' && !isLoading && sendMessage()}
+                disabled={isLoading}
                 placeholder="Type your message..."
                 className="flex-1 border rounded-lg px-3 py-2 text-sm"
               />
@@ -346,9 +297,16 @@ const ChatBot: React.FC = () => {
               </button>
               <button
                 onClick={sendMessage}
-                className="p-2 bg-green-600 text-white rounded-lg"
+                disabled={isLoading}
+                className={`p-2 rounded-lg text-white ${
+                  isLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-green-600 hover:bg-green-700'
+                }`}
               >
-                <Send className="w-4 h-4" />
+                {isLoading ? (
+                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
               </button>
             </div>
           </div>
