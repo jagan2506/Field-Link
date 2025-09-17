@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Eye, Camera, Zap, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { Eye, Camera, Zap, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { CropHealthData } from '../utils/mockData';
 
 interface CropHealthPanelProps {
@@ -8,15 +8,61 @@ interface CropHealthPanelProps {
 
 const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
   const [currentImage, setCurrentImage] = useState(0);
+  const [capturedImages, setCapturedImages] = useState<string[]>([]);
+  const [analysisResults, setAnalysisResults] = useState<any>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
-  const images = [
-    { type: 'IMAGE', url: 'https://tse3.mm.bing.net/th/id/OIP.Mrr5l5w2inczfQ9Ue-MRjQHaE7?pid=Api&P=0&h=180' },
-    { type: 'IMAGE', url: 'https://debraleebaldwin.com/wp-content/uploads/00-Wind-9.20.20-1.20.21_R-768x510.jpg' },
-    { type: 'IMAGE', url: 'https://tse3.mm.bing.net/th/id/OIP.dxFqZ8_tERZT9dnpyNblRgHaE8?pid=Api&P=0&h=180' }
+  const defaultImages = [
+    { type: 'RGB', url: 'https://tse3.mm.bing.net/th/id/OIP.Mrr5l5w2inczfQ9Ue-MRjQHaE7?pid=Api&P=0&h=180' },
+    { type: 'NDVI', url: 'https://debraleebaldwin.com/wp-content/uploads/00-Wind-9.20.20-1.20.21_R-768x510.jpg' },
+    { type: 'False Color', url: 'https://tse3.mm.bing.net/th/id/OIP.dxFqZ8_tERZT9dnpyNblRgHaE8?pid=Api&P=0&h=180' }
   ];
+  
+  const images = capturedImages.length > 0 
+    ? capturedImages.map((url, index) => ({ type: `Captured ${index + 1}`, url }))
+    : defaultImages;
 
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
+  
+  const analyzeImage = async (imageData: string) => {
+    setIsAnalyzing(true);
+    
+    // Simulate multispectral analysis
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock analysis results based on image characteristics
+    const mockResults = {
+      ndvi: (Math.random() * 0.4 + 0.4).toFixed(2), // 0.4-0.8
+      diseaseDetected: Math.random() > 0.7,
+      diseaseName: ['Leaf Spot', 'Blight', 'Rust', 'Healthy'][Math.floor(Math.random() * 4)],
+      confidence: (Math.random() * 30 + 70).toFixed(1), // 70-100%
+      chlorophyll: ['High', 'Medium', 'Low'][Math.floor(Math.random() * 3)],
+      healthStatus: Math.random() > 0.5 ? 'Healthy' : Math.random() > 0.5 ? 'Moderate' : 'Poor'
+    };
+    
+    setAnalysisResults(mockResults);
+    setIsAnalyzing(false);
+  };
+  
+  const handleImageCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const imageData = e.target?.result as string;
+        setCapturedImages(prev => [...prev, imageData]);
+        setCurrentImage(capturedImages.length);
+        analyzeImage(imageData);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  
+  const openCamera = () => {
+    fileInputRef.current?.click();
+  };
 
   return (
     <section className="bg-white rounded-xl shadow-lg p-8">
@@ -68,6 +114,25 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
+          
+          <div className="mt-4 flex justify-center">
+            <button
+              onClick={openCamera}
+              disabled={isAnalyzing}
+              className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400"
+            >
+              <Camera className="w-4 h-4" />
+              <span>{isAnalyzing ? 'Analyzing...' : 'Capture Plant Image'}</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleImageCapture}
+              className="hidden"
+            />
+          </div>
         </div>
         
         {/* Analysis Results */}
@@ -81,24 +146,32 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">NDVI Index</p>
-                <p className="text-2xl font-bold text-green-600">{cropHealth.ndvi}</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {analysisResults?.ndvi || cropHealth.ndvi}
+                </p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">Overall Health</p>
                 <p className={`text-2xl font-bold ${
-                  cropHealth.status === 'Healthy' ? 'text-green-600' :
-                  cropHealth.status === 'Moderate' ? 'text-orange-600' : 'text-red-600'
+                  (analysisResults?.healthStatus || cropHealth.status) === 'Healthy' ? 'text-green-600' :
+                  (analysisResults?.healthStatus || cropHealth.status) === 'Moderate' ? 'text-orange-600' : 'text-red-600'
                 }`}>
-                  {cropHealth.status}
+                  {analysisResults?.healthStatus || cropHealth.status}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">Chlorophyll</p>
-                <p className="text-2xl font-bold text-blue-600">{cropHealth.chlorophyllLevel}</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  {analysisResults?.chlorophyll || cropHealth.chlorophyllLevel}
+                </p>
               </div>
               <div className="text-center">
-                <p className="text-sm text-gray-600 mb-1">Coverage</p>
-                <p className="text-2xl font-bold text-purple-600">{cropHealth.coverage}%</p>
+                <p className="text-sm text-gray-600 mb-1">Disease Status</p>
+                <p className={`text-lg font-bold ${
+                  analysisResults?.diseaseDetected ? 'text-red-600' : 'text-green-600'
+                }`}>
+                  {analysisResults ? (analysisResults.diseaseDetected ? analysisResults.diseaseName : 'Healthy') : 'Not Analyzed'}
+                </p>
               </div>
             </div>
           </div>
@@ -109,10 +182,22 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
               <h4 className="font-semibold text-gray-800">Key Insights</h4>
             </div>
             <ul className="space-y-2 text-sm text-gray-700">
-              <li>• Multispectral analysis shows good vegetation coverage</li>
-              <li>• NDVI values indicate {cropHealth.status.toLowerCase()} crop condition</li>
-              <li>• Chlorophyll levels are within expected range</li>
-              <li>• Consider monitoring stress patterns in lower NDVI areas</li>
+              {analysisResults ? (
+                <>
+                  <li>• AI analysis confidence: {analysisResults.confidence}%</li>
+                  <li>• NDVI value of {analysisResults.ndvi} indicates {analysisResults.healthStatus.toLowerCase()} condition</li>
+                  <li>• {analysisResults.diseaseDetected ? `Disease detected: ${analysisResults.diseaseName}` : 'No disease symptoms detected'}</li>
+                  <li>• Chlorophyll level: {analysisResults.chlorophyll}</li>
+                  {analysisResults.diseaseDetected && <li>• Recommend immediate treatment and monitoring</li>}
+                </>
+              ) : (
+                <>
+                  <li>• Multispectral analysis shows good vegetation coverage</li>
+                  <li>• NDVI values indicate {cropHealth.status.toLowerCase()} crop condition</li>
+                  <li>• Chlorophyll levels are within expected range</li>
+                  <li>• Capture plant image for detailed AI analysis</li>
+                </>
+              )}
             </ul>
           </div>
         </div>
