@@ -17,9 +17,10 @@ export const analyzeImageForDisease = (imageData: string): Promise<any> => {
         
         if (data) {
           // Analyze color patterns for disease detection
-          let greenPixels = 0;
-          let brownPixels = 0;
-          let yellowPixels = 0;
+          let brownSpots = 0;
+          let yellowPatches = 0;
+          let whiteSpots = 0;
+          let darkSpots = 0;
           let totalPixels = data.length / 4;
           
           for (let i = 0; i < data.length; i += 4) {
@@ -27,51 +28,56 @@ export const analyzeImageForDisease = (imageData: string): Promise<any> => {
             const g = data[i + 1];
             const b = data[i + 2];
             
-            // Detect green (healthy)
-            if (g > r && g > b && g > 100) greenPixels++;
-            // Detect brown/dark spots (disease)
-            else if (r > 80 && g > 60 && b < 60) brownPixels++;
-            // Detect yellow (stress/disease)
-            else if (r > 150 && g > 150 && b < 100) yellowPixels++;
+            // Detect brown spots (leaf spot disease)
+            if (r > 100 && g > 70 && b < 50 && r > g) brownSpots++;
+            // Detect yellow patches (blight/early disease)
+            else if (r > 180 && g > 160 && b < 80) yellowPatches++;
+            // Detect white/gray spots (powdery mildew)
+            else if (r > 200 && g > 200 && b > 200) whiteSpots++;
+            // Detect dark/black spots (severe disease)
+            else if (r < 50 && g < 50 && b < 50) darkSpots++;
           }
           
-          const greenRatio = greenPixels / totalPixels;
-          const brownRatio = brownPixels / totalPixels;
-          const yellowRatio = yellowPixels / totalPixels;
+          const brownRatio = brownSpots / totalPixels;
+          const yellowRatio = yellowPatches / totalPixels;
+          const whiteRatio = whiteSpots / totalPixels;
+          const darkRatio = darkSpots / totalPixels;
           
-          // Determine disease based on color analysis
-          let disease = 'healthy';
+          // Disease detection with early stage prediction
+          let disease = 'Healthy';
           let severity = 'None';
           let confidence = 85;
+          let diseaseDetected = false;
           
-          if (brownRatio > 0.15) {
-            disease = 'leaf spot';
-            severity = brownRatio > 0.3 ? 'Severe' : 'Moderate';
-            confidence = Math.min(95, 70 + (brownRatio * 100));
-          } else if (yellowRatio > 0.2) {
-            disease = 'blight';
-            severity = yellowRatio > 0.4 ? 'Severe' : 'Moderate';
-            confidence = Math.min(90, 65 + (yellowRatio * 100));
-          } else if (greenRatio < 0.4) {
-            disease = 'powdery mildew';
-            severity = 'Mild';
-            confidence = 75;
+          // Early stage detection (lower thresholds)
+          if (brownRatio > 0.05) {
+            disease = 'Leaf Spot';
+            severity = brownRatio > 0.2 ? 'Advanced' : brownRatio > 0.1 ? 'Moderate' : 'Early Stage';
+            confidence = Math.min(95, 75 + (brownRatio * 200));
+            diseaseDetected = true;
+          } else if (yellowRatio > 0.08) {
+            disease = 'Early Blight';
+            severity = yellowRatio > 0.25 ? 'Advanced' : yellowRatio > 0.15 ? 'Moderate' : 'Early Stage';
+            confidence = Math.min(92, 70 + (yellowRatio * 150));
+            diseaseDetected = true;
+          } else if (whiteRatio > 0.1) {
+            disease = 'Powdery Mildew';
+            severity = whiteRatio > 0.3 ? 'Advanced' : 'Early Stage';
+            confidence = Math.min(88, 65 + (whiteRatio * 100));
+            diseaseDetected = true;
+          } else if (darkRatio > 0.03) {
+            disease = 'Bacterial Spot';
+            severity = darkRatio > 0.1 ? 'Advanced' : 'Early Stage';
+            confidence = Math.min(90, 80 + (darkRatio * 200));
+            diseaseDetected = true;
           }
           
-          const healthStatus = severity === 'Severe' ? 'Poor' : 
-                              severity === 'Moderate' ? 'Moderate' : 'Healthy';
-          
-          const ndvi = Math.max(0.2, Math.min(0.9, greenRatio + (Math.random() * 0.2 - 0.1)));
-          
           resolve({
-            diseaseDetected: disease !== 'healthy',
-            diseaseName: disease === 'healthy' ? 'Healthy' : disease,
+            diseaseDetected,
+            diseaseName: disease,
             severity,
             confidence: confidence.toFixed(1),
-            healthStatus,
-            ndvi: ndvi.toFixed(2),
-            chlorophyll: healthStatus === 'Healthy' ? 'High' : 
-                        healthStatus === 'Moderate' ? 'Medium' : 'Low'
+            healthStatus: diseaseDetected ? (severity === 'Advanced' ? 'Poor' : severity === 'Moderate' ? 'Moderate' : 'Mild Disease') : 'Healthy'
           });
         }
       };

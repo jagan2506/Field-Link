@@ -169,13 +169,24 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldO
         // Create enhanced prompt with image analysis and image data
         let prompt = `You are analyzing a plant image. Based on the image analysis results, provide detailed treatment advice in ${responseLang} language.\n\n${input}`;
         
-        prompt += `\n\nImage Analysis Results from captured photo:
-- NDVI Index: ${analysisData.ndvi} (vegetation health)
-- Health Status: ${analysisData.healthStatus}
-- Disease: ${analysisData.diseaseDetected ? analysisData.diseaseName : 'None detected'}
-- Severity: ${analysisData.severity}
-- Confidence: ${analysisData.confidence}%
-- Chlorophyll: ${analysisData.chlorophyll}`;
+        prompt += `\n\nComprehensive Plant Disease Analysis from Gemini AI:
+- Disease Status: ${analysisData.diseaseDetected ? 'Multiple diseases detected' : 'No disease detected'}
+- Primary Disease: ${analysisData.diseaseName} (${analysisData.severity})
+- Detection Confidence: ${analysisData.confidence}%
+- Overall Plant Health: ${analysisData.healthStatus}`;
+        
+        if (analysisData.allDiseases && analysisData.allDiseases.length > 0) {
+          prompt += `\n- All Detected Diseases:`;
+          analysisData.allDiseases.forEach((disease: any, index: number) => {
+            prompt += `\n  ${index + 1}. ${disease.name} (${disease.severity}) - Confidence: ${disease.confidence}%`;
+            if (disease.symptoms) {
+              prompt += `\n     Symptoms: ${disease.symptoms.join(', ')}`;
+            }
+            if (disease.remedies) {
+              prompt += `\n     Remedies: ${disease.remedies.join(', ')}`;
+            }
+          });
+        }
         
         if (analysisData.remedies && analysisData.remedies.length > 0) {
           prompt += `\n- Quick Remedies: ${analysisData.remedies.join(', ')}`;
@@ -202,7 +213,7 @@ Respond entirely in ${responseLang} language.`;
       // Include image analysis data in general queries
       let prompt = input;
       if (analysisData) {
-        prompt += `\n\nPlant Image Analysis: NDVI ${analysisData.ndvi}, Health: ${analysisData.healthStatus}, Disease: ${analysisData.diseaseDetected ? analysisData.diseaseName : 'Healthy'}`;
+        prompt += `\n\nPlant Disease Analysis: ${analysisData.diseaseDetected ? `${analysisData.diseaseName} detected at ${analysisData.severity} stage` : 'No disease detected - Healthy plant'}`;
       }
       
       const geminiResponse = await callGeminiAPI(prompt, responseLang);
@@ -418,7 +429,9 @@ Respond entirely in ${responseLang} language.`;
                     className="w-20 h-20 object-cover rounded mx-auto mb-2"
                   />
                   <p className="text-xs text-gray-600">
-                    NDVI: {analysisData.ndvi} | Health: {analysisData.healthStatus} | Confidence: {analysisData.confidence}%
+                    {analysisData.diseaseDetected ? 
+                      `${analysisData.allDiseases?.length || 1} disease(s) detected | Primary: ${analysisData.diseaseName}` : 
+                      'Healthy Plant'} | Confidence: {analysisData.confidence}%
                   </p>
                 </div>
               </div>

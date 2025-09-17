@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Eye, Camera, Zap, ChevronLeft, ChevronRight, Upload } from 'lucide-react';
 import { CropHealthData } from '../utils/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
-import { analyzeImageForDisease } from '../utils/imageAnalysis';
+import { analyzeImageWithGemini } from '../utils/geminiImageAnalysis';
 
 interface CropHealthPanelProps {
   cropHealth: CropHealthData;
@@ -40,27 +40,30 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
     setIsAnalyzing(true);
     
     try {
-      // Analyze the actual captured image
-      const analysisResults = await analyzeImageForDisease(imageData);
+      // Analyze image using Gemini API
+      const geminiResults = await analyzeImageWithGemini(imageData, selectedLang);
       
-      const remedies = {
-        'leaf spot': ['Apply Mancozeb 75% WP @ 2g/L', 'Remove affected leaves', 'Improve air circulation'],
-        'blight': ['Spray Copper oxychloride @ 3g/L', 'Apply Metalaxyl + Mancozeb @ 2g/L', 'Ensure proper drainage'],
-        'rust': ['Use Propiconazole 25% EC @ 1ml/L', 'Apply Tebuconazole @ 0.1%', 'Avoid overhead irrigation'],
-        'powdery mildew': ['Spray Sulfur 80% WP @ 2g/L', 'Apply Carbendazim 50% WP @ 1g/L', 'Reduce humidity']
-      };
+      // Process Gemini results
+      const primaryDisease = geminiResults.diseases && geminiResults.diseases.length > 0 
+        ? geminiResults.diseases[0] 
+        : null;
       
       const finalResults = {
-        ...analysisResults,
-        urgency: analysisResults.severity === 'Severe' ? 'URGENT' : 
-                analysisResults.severity === 'Moderate' ? 'Soon' : 'Monitor',
-        remedies: analysisResults.diseaseDetected ? 
-                 remedies[analysisResults.diseaseName.toLowerCase() as keyof typeof remedies] || [] : []
+        diseaseDetected: geminiResults.diseaseDetected,
+        diseaseName: primaryDisease ? primaryDisease.name : 'Healthy',
+        severity: primaryDisease ? primaryDisease.severity : 'None',
+        confidence: geminiResults.overallConfidence || '85',
+        healthStatus: geminiResults.healthStatus,
+        diseases: geminiResults.diseases || [],
+        symptoms: primaryDisease ? primaryDisease.symptoms : [],
+        remedies: primaryDisease ? primaryDisease.remedies : geminiResults.recommendations || [],
+        allDiseases: geminiResults.diseases || [],
+        recommendations: geminiResults.recommendations || []
       };
       
       setAnalysisResults(prev => ({ ...prev, [imageIndex]: finalResults }));
       
-      // Auto-open ChatBot with analysis results using page language
+      // Auto-open ChatBot with comprehensive analysis
       if (onOpenChatBot) {
         const analysisData = {
           ...finalResults,
@@ -70,13 +73,13 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
         };
         
         const remedyMessage = finalResults.diseaseDetected 
-          ? `Analyze this plant image and provide detailed treatment remedies for ${finalResults.diseaseName} disease with ${finalResults.severity} severity. Use the captured image for context.`
-          : `Analyze this healthy plant image with NDVI ${finalResults.ndvi} and provide maintenance tips.`;
+          ? `Multiple diseases detected in plant image. Primary: ${finalResults.diseaseName} at ${finalResults.severity} stage. Provide comprehensive treatment plan for all detected diseases.`
+          : `Healthy plant detected. Provide preventive care and maintenance recommendations.`;
         
         onOpenChatBot(remedyMessage, analysisData);
       }
     } catch (error) {
-      console.error('Image analysis failed:', error);
+      console.error('Gemini image analysis failed:', error);
     } finally {
       setIsAnalyzing(false);
     }
