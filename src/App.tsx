@@ -12,6 +12,8 @@ import { generateMockData, SensorData } from './utils/mockData';
 function App() {
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [chatBotMessage, setChatBotMessage] = useState<string>('');
+  const [shouldOpenChatBot, setShouldOpenChatBot] = useState(false);
 
   useEffect(() => {
     // Initialize with mock data
@@ -85,7 +87,13 @@ function App() {
         <AlertSection sensorData={sensorData} />
 
         {/* Crop Health Visual Panel */}
-        <CropHealthPanel cropHealth={sensorData.cropHealth} />
+        <CropHealthPanel 
+          cropHealth={sensorData.cropHealth} 
+          onOpenChatBot={(message) => {
+            setChatBotMessage(message);
+            setShouldOpenChatBot(true);
+          }}
+        />
 
         {/* Data Visualization */}
         <DataCharts />
@@ -108,7 +116,14 @@ function App() {
       </main>
 
       <Footer />
-      <ChatBot />
+      <ChatBot 
+        initialMessage={chatBotMessage}
+        shouldOpen={shouldOpenChatBot}
+        onClose={() => {
+          setShouldOpenChatBot(false);
+          setChatBotMessage('');
+        }}
+      />
     </div>
   );
 }

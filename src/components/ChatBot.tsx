@@ -9,7 +9,13 @@ interface Message {
   timestamp: Date;
 }
 
-const ChatBot: React.FC = () => {
+interface ChatBotProps {
+  initialMessage?: string;
+  shouldOpen?: boolean;
+  onClose?: () => void;
+}
+
+const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -233,7 +239,41 @@ const ChatBot: React.FC = () => {
   }, [messages]);
 
   useEffect(() => {
-    if (isOpen && messages.length === 0) {
+    if (shouldOpen) {
+      setIsOpen(true);
+      if (initialMessage) {
+        // Send the initial message automatically
+        const userMessage: Message = {
+          text: initialMessage,
+          isUser: true,
+          timestamp: new Date()
+        };
+        setMessages([userMessage]);
+        
+        // Get AI response
+        setTimeout(async () => {
+          setIsLoading(true);
+          try {
+            const botResponse = await getResponse(initialMessage);
+            const botMessage: Message = {
+              text: botResponse,
+              isUser: false,
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, botMessage]);
+            speakText(botResponse);
+          } catch (error) {
+            console.error('Error in initial response:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        }, 1000);
+      }
+    }
+  }, [shouldOpen, initialMessage]);
+  
+  useEffect(() => {
+    if (isOpen && messages.length === 0 && !initialMessage) {
       const greeting = responses[selectedLanguage as keyof typeof responses].greeting;
       setMessages([{
         text: greeting,
@@ -276,6 +316,7 @@ const ChatBot: React.FC = () => {
             <button onClick={() => {
               speechSynthesis.cancel();
               setIsOpen(false);
+              onClose?.();
             }}>
               <X className="w-5 h-5" />
             </button>

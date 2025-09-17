@@ -4,13 +4,16 @@ import { CropHealthData } from '../utils/mockData';
 
 interface CropHealthPanelProps {
   cropHealth: CropHealthData;
+  onOpenChatBot?: (message: string) => void;
 }
 
-const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
+const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenChatBot }) => {
   const [currentImage, setCurrentImage] = useState(0);
   const [capturedImages, setCapturedImages] = useState<string[]>([]);
   const [analysisResults, setAnalysisResults] = useState<{[key: number]: any}>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingImageData, setPendingImageData] = useState<{data: string, index: number} | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const defaultImages = [
@@ -45,6 +48,13 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
     const severity = leafHealth === 'Poor' && diseaseDetected ? (Math.random() > 0.5 ? 'Severe' : 'Moderate') : 
                      leafHealth === 'Moderate' && diseaseDetected ? 'Mild' : 'None';
     
+    const remedies = {
+      'Leaf Spot': ['Apply Mancozeb 75% WP @ 2g/L', 'Remove affected leaves', 'Improve air circulation'],
+      'Blight': ['Spray Copper oxychloride @ 3g/L', 'Apply Metalaxyl + Mancozeb @ 2g/L', 'Ensure proper drainage'],
+      'Rust': ['Use Propiconazole 25% EC @ 1ml/L', 'Apply Tebuconazole @ 0.1%', 'Avoid overhead irrigation'],
+      'Powdery Mildew': ['Spray Sulfur 80% WP @ 2g/L', 'Apply Carbendazim 50% WP @ 1g/L', 'Reduce humidity']
+    };
+    
     const mockResults = {
       ndvi: leafHealth === 'Healthy' ? (0.7 + Math.random() * 0.2).toFixed(2) : 
             leafHealth === 'Moderate' ? (0.4 + Math.random() * 0.3).toFixed(2) : 
@@ -55,7 +65,8 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
       confidence: (Math.random() * 20 + 80).toFixed(1), // 80-100%
       chlorophyll: leafHealth === 'Healthy' ? 'High' : leafHealth === 'Moderate' ? 'Medium' : 'Low',
       healthStatus: leafHealth,
-      urgency: severity === 'Severe' ? 'URGENT' : severity === 'Moderate' ? 'Soon' : 'Monitor'
+      urgency: severity === 'Severe' ? 'URGENT' : severity === 'Moderate' ? 'Soon' : 'Monitor',
+      remedies: diseaseDetected ? remedies[selectedDisease as keyof typeof remedies] || [] : []
     };
     
     setAnalysisResults(prev => ({ ...prev, [imageIndex]: mockResults }));
@@ -71,10 +82,36 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
         const newIndex = capturedImages.length;
         setCapturedImages(prev => [...prev, imageData]);
         setCurrentImage(newIndex);
-        analyzeImage(imageData, newIndex);
+        setPendingImageData({ data: imageData, index: newIndex });
+        setShowConfirmDialog(true);
       };
       reader.readAsDataURL(file);
     }
+  };
+  
+  const handleProceedAnalysis = async () => {
+    if (pendingImageData) {
+      setShowConfirmDialog(false);
+      await analyzeImage(pendingImageData.data, pendingImageData.index);
+      
+      // Get analysis results and trigger chatbot with remedy
+      const results = analysisResults[pendingImageData.index];
+      if (results && results.diseaseDetected && onOpenChatBot) {
+        const remedyMessage = `Disease detected: ${results.diseaseName} with ${results.severity} severity. Please provide detailed treatment remedies and steps.`;
+        onOpenChatBot(remedyMessage);
+      }
+      
+      setPendingImageData(null);
+    }
+  };
+  
+  const handleCancelAnalysis = () => {
+    if (pendingImageData) {
+      setCapturedImages(prev => prev.slice(0, -1));
+      setCurrentImage(prev => Math.max(0, prev - 1));
+    }
+    setShowConfirmDialog(false);
+    setPendingImageData(null);
   };
   
   const openCamera = () => {
@@ -87,6 +124,32 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
         <Eye className="w-6 h-6 text-blue-600" />
         <h2 className="text-2xl font-bold text-gray-800">Crop Health Visual Insights</h2>
       </div>
+      
+      {/* Confirmation Dialog */}
+      {showConfirmDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Analyze Plant Image</h3>
+            <p className="text-gray-600 mb-6">
+              Would you like to proceed with AI analysis to detect diseases and get treatment remedies for this plant image?
+            </p>
+            <div className="flex space-x-3 justify-end">
+              <button
+                onClick={handleCancelAnalysis}
+                className="px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleProceedAnalysis}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Proceed with Analysis
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Image Viewer */}
@@ -216,8 +279,13 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth }) => {
                   {currentAnalysis.severity === 'Mild' && (
                     <li className="text-yellow-600">• Monitor closely and consider preventive treatment.</li>
                   )}
-                  {currentAnalysis.diseaseDetected && currentAnalysis.severity !== 'Mild' && (
-                    <li>• Recommended action: {currentAnalysis.urgency === 'URGENT' ? 'Apply fungicide immediately, isolate affected plants' : 'Schedule treatment application, increase monitoring frequency'}</li>
+                  {currentAnalysis.diseaseDetected && currentAnalysis.remedies && currentAnalysis.remedies.length > 0 && (
+                    <>
+                      <li className="font-semibold text-blue-600">Treatment Remedies:</li>
+                      {currentAnalysis.remedies.map((remedy: string, index: number) => (
+                        <li key={index} className="ml-4">• {remedy}</li>
+                      ))}
+                    </>
                   )}
                 </>
               ) : (
