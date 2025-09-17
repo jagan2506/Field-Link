@@ -22,6 +22,8 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
   const [selectedLanguage, setSelectedLanguage] = useState('english');
   const [isListening, setIsListening] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [showLanguageSelector, setShowLanguageSelector] = useState(false);
+  const [pendingTreatmentMessage, setPendingTreatmentMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const languages = {
@@ -34,6 +36,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
   const responses = {
     english: {
       greeting: "Hello! I'm your agricultural assistant. How can I help you today?",
+      languagePrompt: "Which language would you like the detailed treatment plan in?",
       cropHealth: "Your crops show healthy growth with NDVI 0.75. Green leaves indicate good chlorophyll levels.",
       weather: "Temperature 24°C, humidity 65%. Perfect conditions for crop growth today.",
       irrigation: "Soil moisture at 45%. Water needed in 2 hours for optimal growth.",
@@ -47,6 +50,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
     },
     tamil: {
       greeting: "வணக்கம்! நான் உங்கள் விவசாய உதவியாளர். இன்று நான் எப்படி உதவ முடியும்?",
+      languagePrompt: "விரிவான சிகிச்சை திட்டம் எந்த மொழியில் வேண்டும்?",
       cropHealth: "உங்கள் பயிர்கள் NDVI 0.75 உடன் ஆரோக்கியமான வளர்ச்சி. பச்சை இலைகள் நல்ல குளோரோபில் அளவைக் காட்டுகின்றன.",
       weather: "வெப்பநிலை 24°C, ஈரப்பதம் 65%. இன்று பயிர் வளர்ச்சிக்கு சரியான சூழல்.",
       irrigation: "மண் ஈரப்பதம் 45%. சிறந்த வளர்ச்சிக்கு 2 மணி நேரத்தில் நீர் தேவை.",
@@ -60,6 +64,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
     },
     telugu: {
       greeting: "నమస్కారం! నేను మీ వ్యవసాయ సహాయకుడను. ఈరోజు నేను ఎలా సహాయం చేయగలను?",
+      languagePrompt: "వివరణాత్మక చికిత్స ప్రణాళిక ఎవరి భాషలో కావాలి?"
       cropHealth: "మీ పంటలు NDVI 0.75తో ఆరోగ్యకరమైన పెరుగుదల. ఆకుపచ్చ ఆకులు మంచి క్లోరోఫిల్ స్థాయిలను చూపుతున్నాయి.",
       weather: "ఉష్ణోగ్రత 24°C, తేమ 65%. ఈరోజు పంట పెరుగుదలకు అనుకూల పరిస్థితులు.",
       irrigation: "మట్టి తేమ 45%. మంచి పెరుగుదలకు 2 గంటల్లో నీరు అవసరం.",
@@ -73,6 +78,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
     },
     malayalam: {
       greeting: "നമസ്കാരം! ഞാൻ നിങ്ങളുടെ കാർഷിക സഹായിയാണ്. ഇന്ന് എനിക്ക് എങ്ങനെ സഹായിക്കാം?",
+      languagePrompt: "വിശദമായ ചികിത്സാ പദ്ധതി ഏത് ഭാഷയിലാണ് വേണ്ടത്?"
       cropHealth: "നിങ്ങളുടെ വിളകൾ NDVI 0.75 ഉം ആരോഗ്യകരമായ വളർച്ച കാണിക്കുന്നു. പച്ച ഇലകൾ നല്ല ക്ലോറോഫിൽ അളവ് സൂചിപ്പിക്കുന്നു.",
       weather: "താപനില 24°C, ആർദ്രത 65%. ഇന്ന് വിള വളർച്ചയ്ക്ക് അനുയോജ്യമായ അവസ്ഥകൾ.",
       irrigation: "മണ്ണിന്റെ ഈർപ്പം 45%. മികച്ച വളർച്ചയ്ക്ക് 2 മണിക്കൂറിനുള്ളിൽ വെള്ളം ആവശ്യം.",
@@ -242,32 +248,52 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
     if (shouldOpen) {
       setIsOpen(true);
       if (initialMessage) {
-        // Send the initial message automatically
-        const userMessage: Message = {
-          text: initialMessage,
-          isUser: true,
-          timestamp: new Date()
-        };
-        setMessages([userMessage]);
-        
-        // Get AI response
-        setTimeout(async () => {
-          setIsLoading(true);
-          try {
-            const botResponse = await getResponse(initialMessage);
-            const botMessage: Message = {
-              text: botResponse,
-              isUser: false,
-              timestamp: new Date()
-            };
-            setMessages(prev => [...prev, botMessage]);
-            speakText(botResponse);
-          } catch (error) {
-            console.error('Error in initial response:', error);
-          } finally {
-            setIsLoading(false);
-          }
-        }, 1000);
+        // Check if it's a treatment plan request
+        if (initialMessage.toLowerCase().includes('treatment') || initialMessage.toLowerCase().includes('remedies')) {
+          setPendingTreatmentMessage(initialMessage);
+          setShowLanguageSelector(true);
+          
+          const userMessage: Message = {
+            text: initialMessage,
+            isUser: true,
+            timestamp: new Date()
+          };
+          
+          const promptMessage: Message = {
+            text: responses[selectedLanguage as keyof typeof responses].languagePrompt,
+            isUser: false,
+            timestamp: new Date()
+          };
+          
+          setMessages([userMessage, promptMessage]);
+        } else {
+          // Send the initial message automatically
+          const userMessage: Message = {
+            text: initialMessage,
+            isUser: true,
+            timestamp: new Date()
+          };
+          setMessages([userMessage]);
+          
+          // Get AI response
+          setTimeout(async () => {
+            setIsLoading(true);
+            try {
+              const botResponse = await getResponse(initialMessage);
+              const botMessage: Message = {
+                text: botResponse,
+                isUser: false,
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, botMessage]);
+              speakText(botResponse);
+            } catch (error) {
+              console.error('Error in initial response:', error);
+            } finally {
+              setIsLoading(false);
+            }
+          }, 1000);
+        }
       }
     }
   }, [shouldOpen, initialMessage]);
@@ -346,6 +372,54 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
                 </div>
               </div>
             ))}
+            
+            {showLanguageSelector && (
+              <div className="mb-3 text-center">
+                <div className="grid grid-cols-2 gap-2">
+                  {Object.entries(languages).map(([key, lang]) => (
+                    <button
+                      key={key}
+                      onClick={async () => {
+                        setShowLanguageSelector(false);
+                        setIsLoading(true);
+                        
+                        const langMessage: Message = {
+                          text: `Selected: ${lang.name}`,
+                          isUser: true,
+                          timestamp: new Date()
+                        };
+                        setMessages(prev => [...prev, langMessage]);
+                        
+                        try {
+                          const treatmentResponse = await callGeminiAPI(pendingTreatmentMessage, key);
+                          const botMessage: Message = {
+                            text: treatmentResponse,
+                            isUser: false,
+                            timestamp: new Date()
+                          };
+                          setMessages(prev => [...prev, botMessage]);
+                          
+                          // Set language for speech
+                          const oldLang = selectedLanguage;
+                          setSelectedLanguage(key);
+                          speakText(treatmentResponse);
+                          setSelectedLanguage(oldLang);
+                        } catch (error) {
+                          console.error('Error getting treatment response:', error);
+                        } finally {
+                          setIsLoading(false);
+                          setPendingTreatmentMessage('');
+                        }
+                      }}
+                      className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
+                    >
+                      {lang.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
 
