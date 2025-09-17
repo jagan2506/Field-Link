@@ -116,7 +116,7 @@ const ChatBot: React.FC = () => {
           utterance.voice = selectedVoice;
         }
         
-        utterance.rate = 0.6;
+        utterance.rate = 0.9;
         utterance.pitch = 1.2;
         utterance.volume = 1.0;
         speechSynthesis.speak(utterance);
