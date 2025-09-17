@@ -249,9 +249,10 @@ Respond in ${detectedLang} language with proper agricultural terminology.`;
       };
       setMessages(prev => [...prev, botMessage]);
       
-      // Use detected language for speech
+      // Use selected language from analysis or detected language for speech
+      const speechLang = analysisData?.selectedLanguage || detectedLang;
       const oldLang = selectedLanguage;
-      setSelectedLanguage(detectedLang);
+      setSelectedLanguage(speechLang);
       speakText(botResponse);
       setSelectedLanguage(oldLang);
     } catch (error) {

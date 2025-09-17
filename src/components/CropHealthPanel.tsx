@@ -16,7 +16,9 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
   const [analysisResults, setAnalysisResults] = useState<{[key: number]: any}>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [showLanguageDialog, setShowLanguageDialog] = useState(false);
   const [pendingImageData, setPendingImageData] = useState<{data: string, index: number} | null>(null);
+  const [analysisComplete, setAnalysisComplete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const defaultImages = [
@@ -57,10 +59,12 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
       };
       
       setAnalysisResults(prev => ({ ...prev, [imageIndex]: finalResults }));
+      setAnalysisComplete(true);
+      setShowLanguageDialog(true);
     } catch (error) {
       console.error('Image analysis failed:', error);
     } finally {
-      setIsLoading(false);
+      setIsAnalyzing(false);
     }
   };
   
@@ -88,7 +92,9 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
     }
   };
   
-  const handleGetRemedies = () => {
+  const handleLanguageSelection = (selectedLang: string) => {
+    setShowLanguageDialog(false);
+    
     if (currentAnalysis && onOpenChatBot) {
       const imageData = capturedImages[currentImage] || defaultImages[currentImage].url;
       const analysisData = {
@@ -100,7 +106,8 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
         chlorophyll: currentAnalysis.chlorophyll,
         confidence: currentAnalysis.confidence,
         remedies: currentAnalysis.remedies || [],
-        imageUrl: imageData
+        imageUrl: imageData,
+        selectedLanguage: selectedLang
       };
       
       const remedyMessage = currentAnalysis.diseaseDetected 
@@ -108,6 +115,12 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
         : `Plant appears healthy with NDVI ${currentAnalysis.ndvi}. Please provide maintenance tips and preventive care suggestions to keep the plant healthy.`;
       
       onOpenChatBot(remedyMessage, analysisData);
+    }
+  };
+  
+  const handleGetRemedies = () => {
+    if (analysisComplete) {
+      setShowLanguageDialog(true);
     }
   };
   
@@ -151,6 +164,44 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
               >
                 {t.proceedAnalysis}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Language Selection Dialog */}
+      {showLanguageDialog && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md mx-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Select Language for Voice Remedy</h3>
+            <p className="text-gray-600 mb-6">
+              Choose your preferred language for voice explanation of the disease and treatment:
+            </p>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button
+                onClick={() => handleLanguageSelection('english')}
+                className="p-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              >
+                English
+              </button>
+              <button
+                onClick={() => handleLanguageSelection('tamil')}
+                className="p-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              >
+                தமிழ்
+              </button>
+              <button
+                onClick={() => handleLanguageSelection('malayalam')}
+                className="p-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              >
+                മലയാളം
+              </button>
+              <button
+                onClick={() => handleLanguageSelection('telugu')}
+                className="p-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
+              >
+                తెలుగు
               </button>
             </div>
           </div>
