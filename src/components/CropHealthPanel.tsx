@@ -255,11 +255,14 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
               <div className="text-center">
                 <p className="text-sm text-gray-600 mb-1">{t.diseaseStatus}</p>
                 <p className={`text-lg font-bold ${
-                  currentAnalysis?.severity === 'Severe' ? 'text-red-600' :
-                  currentAnalysis?.severity === 'Moderate' ? 'text-orange-600' :
-                  currentAnalysis?.diseaseDetected ? 'text-yellow-600' : 'text-green-600'
+                  (currentAnalysis?.healthStatus || cropHealth.status) === 'Healthy' ? 'text-green-600' :
+                  (currentAnalysis?.healthStatus || cropHealth.status) === 'Moderate' ? 'text-orange-600' : 'text-red-600'
                 }`}>
-                  {currentAnalysis ? (currentAnalysis.diseaseDetected ? `${currentAnalysis.diseaseName} (${currentAnalysis.severity})` : t.healthy) : t.notAnalyzed}
+                  {currentAnalysis?.healthStatus === 'Healthy' ? t.healthy : 
+                   currentAnalysis?.healthStatus === 'Moderate' ? t.moderate : 
+                   currentAnalysis?.healthStatus === 'Poor' ? t.poor : 
+                   cropHealth.status === 'Healthy' ? t.healthy : 
+                   cropHealth.status === 'Moderate' ? t.moderate : t.poor}
                 </p>
               </div>
             </div>
