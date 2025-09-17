@@ -242,6 +242,11 @@ const ChatBot: React.FC = () => {
       }]);
       speakText(greeting);
     }
+    
+    // Stop speech when chatbot is closed
+    if (!isOpen) {
+      speechSynthesis.cancel();
+    }
   }, [isOpen, selectedLanguage]);
 
   return (
@@ -268,7 +273,10 @@ const ChatBot: React.FC = () => {
                 ))}
               </select>
             </div>
-            <button onClick={() => setIsOpen(false)}>
+            <button onClick={() => {
+              speechSynthesis.cancel();
+              setIsOpen(false);
+            }}>
               <X className="w-5 h-5" />
             </button>
           </div>
