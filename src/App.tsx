@@ -18,6 +18,7 @@ function App() {
   const [sensorData, setSensorData] = useState<SensorData | null>(null);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
   const [chatBotMessage, setChatBotMessage] = useState<string>('');
+  const [chatBotAnalysisData, setChatBotAnalysisData] = useState<any>(null);
   const [shouldOpenChatBot, setShouldOpenChatBot] = useState(false);
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [isAlertModalOpen, setIsAlertModalOpen] = useState(false);
@@ -114,8 +115,9 @@ function App() {
         {/* Crop Health Visual Panel */}
         <CropHealthPanel 
           cropHealth={sensorData.cropHealth} 
-          onOpenChatBot={(message) => {
+          onOpenChatBot={(message, analysisData) => {
             setChatBotMessage(message);
+            setChatBotAnalysisData(analysisData);
             setShouldOpenChatBot(true);
           }}
         />
@@ -152,10 +154,12 @@ function App() {
       <Footer />
       <ChatBot 
         initialMessage={chatBotMessage}
+        analysisData={chatBotAnalysisData}
         shouldOpen={shouldOpenChatBot}
         onClose={() => {
           setShouldOpenChatBot(false);
           setChatBotMessage('');
+          setChatBotAnalysisData(null);
         }}
       />
       

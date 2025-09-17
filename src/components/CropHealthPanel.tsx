@@ -101,10 +101,24 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
   
   const handleGetRemedies = () => {
     if (currentAnalysis && onOpenChatBot) {
+      const imageData = capturedImages[currentImage] || defaultImages[currentImage].url;
+      const analysisData = {
+        ndvi: currentAnalysis.ndvi,
+        healthStatus: currentAnalysis.healthStatus,
+        diseaseDetected: currentAnalysis.diseaseDetected,
+        diseaseName: currentAnalysis.diseaseName,
+        severity: currentAnalysis.severity,
+        chlorophyll: currentAnalysis.chlorophyll,
+        confidence: currentAnalysis.confidence,
+        remedies: currentAnalysis.remedies || [],
+        imageUrl: imageData
+      };
+      
       const remedyMessage = currentAnalysis.diseaseDetected 
-        ? `Disease detected: ${currentAnalysis.diseaseName} with ${currentAnalysis.severity} severity. Please provide detailed treatment remedies, prevention steps, and care instructions for this plant disease.`
+        ? `Disease detected: ${currentAnalysis.diseaseName} with ${currentAnalysis.severity} severity. NDVI: ${currentAnalysis.ndvi}, Confidence: ${currentAnalysis.confidence}%. Please provide detailed treatment remedies, prevention steps, and care instructions for this plant disease.`
         : `Plant appears healthy with NDVI ${currentAnalysis.ndvi}. Please provide maintenance tips and preventive care suggestions to keep the plant healthy.`;
-      onOpenChatBot(remedyMessage);
+      
+      onOpenChatBot(remedyMessage, analysisData);
     }
   };
   

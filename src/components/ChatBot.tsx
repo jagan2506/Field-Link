@@ -12,11 +12,12 @@ interface Message {
 
 interface ChatBotProps {
   initialMessage?: string;
+  analysisData?: any;
   shouldOpen?: boolean;
   onClose?: () => void;
 }
 
-const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }) => {
+const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldOpen, onClose }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState('');
@@ -162,7 +163,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
                            // Malayalam keywords  
                            input.includes('മരുന്ന്') || input.includes('ചികിത്സ') || input.includes('രോഗം') ||
                            // Telugu keywords
-                           input.includes('మందు') || input.includes('చికిత్స') || input.includes('వ్యాధి');
+                           input.includes('మందు') || input.includes('చికిత്స') || input.includes('వ్యాధి');
     
     if (isRemedyRequest) {
       // Get medicine recommendations
@@ -170,8 +171,23 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
       const medicineResponse = formatMedicineResponse(medicines, detectedLang);
       
       try {
-        // Get AI response in detected language with medicine info
-        const prompt = `${input}\n\nMedicine recommendations: ${medicineResponse}`;
+        // Create enhanced prompt with image analysis data
+        let prompt = input;
+        if (analysisData) {
+          prompt += `\n\nImage Analysis Results:
+- NDVI: ${analysisData.ndvi}
+- Health Status: ${analysisData.healthStatus}
+- Disease Detected: ${analysisData.diseaseDetected ? analysisData.diseaseName : 'None'}
+- Severity: ${analysisData.severity || 'N/A'}
+- Chlorophyll Level: ${analysisData.chlorophyll}
+- Confidence: ${analysisData.confidence}%`;
+          
+          if (analysisData.remedies && analysisData.remedies.length > 0) {
+            prompt += `\n- Quick Remedies: ${analysisData.remedies.join(', ')}`;
+          }
+        }
+        
+        prompt += `\n\nMedicine recommendations: ${medicineResponse}`;
         const geminiResponse = await callGeminiAPI(prompt, detectedLang);
         return `${geminiResponse}\n\n${medicineResponse}`;
       } catch (error) {
@@ -181,7 +197,13 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
     }
     
     try {
-      const geminiResponse = await callGeminiAPI(input, detectedLang);
+      // Include analysis data in general queries if available
+      let prompt = input;
+      if (analysisData) {
+        prompt += `\n\nCurrent Plant Analysis: NDVI ${analysisData.ndvi}, Health: ${analysisData.healthStatus}, Chlorophyll: ${analysisData.chlorophyll}`;
+      }
+      
+      const geminiResponse = await callGeminiAPI(prompt, detectedLang);
       return geminiResponse;
     } catch (error) {
       console.error('Gemini API failed, using fallback:', error);
@@ -384,6 +406,21 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
           </div>
 
           <div className="flex-1 p-4 h-64 overflow-y-auto">
+            {analysisData && (
+              <div className="mb-3 text-center">
+                <div className="bg-blue-50 p-3 rounded-lg">
+                  <img 
+                    src={analysisData.imageUrl} 
+                    alt="Plant Analysis" 
+                    className="w-20 h-20 object-cover rounded mx-auto mb-2"
+                  />
+                  <p className="text-xs text-gray-600">
+                    NDVI: {analysisData.ndvi} | Health: {analysisData.healthStatus} | Confidence: {analysisData.confidence}%
+                  </p>
+                </div>
+              </div>
+            )}
+            
             {messages.map((message, index) => (
               <div key={index} className={`mb-3 ${message.isUser ? 'text-right' : 'text-left'}`}>
                 <div className={`inline-block p-2 rounded-lg max-w-xs ${
