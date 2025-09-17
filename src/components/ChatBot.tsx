@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, Send, Mic, Volume2, X, Globe, Bot } from 'lucide-react';
 import { plantsDatabase, getWeatherForecast, findPlantByName, findDiseaseRemedies } from '../utils/agricultureDatabase';
 import { callGeminiAPI } from '../utils/geminiApi';
+import { detectLanguageFromText, getMedicineRecommendations, formatMedicineResponse } from '../utils/medicineApi';
 
 interface Message {
   text: string;
@@ -143,7 +144,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
   };
 
   const getResponse = async (input: string): Promise<string> => {
-    // Check if input is asking for remedies/treatment
+    // Detect language from user input
+    const detectedLang = detectLanguageFromText(input);
+    
+    // Check if input is asking for remedies/treatment in any language
     const isRemedyRequest = input.toLowerCase().includes('remedy') || 
                            input.toLowerCase().includes('treatment') || 
                            input.toLowerCase().includes('cure') || 
@@ -152,21 +156,37 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
                            input.toLowerCase().includes('pest') ||
                            input.toLowerCase().includes('problem') ||
                            input.toLowerCase().includes('help') ||
-                           input.toLowerCase().includes('fix');
+                           input.toLowerCase().includes('fix') ||
+                           // Tamil keywords
+                           input.includes('மருந்து') || input.includes('சிகிச்சை') || input.includes('நோய்') ||
+                           // Malayalam keywords  
+                           input.includes('മരുന്ന്') || input.includes('ചികിത്സ') || input.includes('രോഗം') ||
+                           // Telugu keywords
+                           input.includes('మందు') || input.includes('చికిత్స') || input.includes('వ్యాధి');
     
-    if (isRemedyRequest && !showLanguageSelector) {
-      setPendingTreatmentMessage(input);
-      setShowLanguageSelector(true);
-      return responses[selectedLanguage as keyof typeof responses].languagePrompt;
+    if (isRemedyRequest) {
+      // Get medicine recommendations
+      const medicines = getMedicineRecommendations(input, detectedLang);
+      const medicineResponse = formatMedicineResponse(medicines, detectedLang);
+      
+      try {
+        // Get AI response in detected language with medicine info
+        const prompt = `${input}\n\nMedicine recommendations: ${medicineResponse}`;
+        const geminiResponse = await callGeminiAPI(prompt, detectedLang);
+        return `${geminiResponse}\n\n${medicineResponse}`;
+      } catch (error) {
+        console.error('Gemini API failed, using medicine fallback:', error);
+        return medicineResponse;
+      }
     }
     
     try {
-      const geminiResponse = await callGeminiAPI(input, selectedLanguage);
+      const geminiResponse = await callGeminiAPI(input, detectedLang);
       return geminiResponse;
     } catch (error) {
       console.error('Gemini API failed, using fallback:', error);
-      const lang = selectedLanguage as keyof typeof responses;
-      return responses[lang].default;
+      const lang = detectedLang as keyof typeof responses;
+      return responses[lang]?.default || responses.english.default;
     }
   };
 
@@ -184,31 +204,28 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
     const currentInput = inputText;
     setInputText('');
     
+    // Detect language from user input
+    const detectedLang = detectLanguageFromText(currentInput);
+    
     try {
       const botResponse = await getResponse(currentInput);
       
-      // Don't add bot message if language selector is shown
-      if (!showLanguageSelector) {
-        const botMessage: Message = {
-          text: botResponse,
-          isUser: false,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, botMessage]);
-        speakText(botResponse);
-      } else {
-        // Add the language prompt message
-        const botMessage: Message = {
-          text: botResponse,
-          isUser: false,
-          timestamp: new Date()
-        };
-        setMessages(prev => [...prev, botMessage]);
-      }
+      const botMessage: Message = {
+        text: botResponse,
+        isUser: false,
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, botMessage]);
+      
+      // Use detected language for speech
+      const oldLang = selectedLanguage;
+      setSelectedLanguage(detectedLang);
+      speakText(botResponse);
+      setSelectedLanguage(oldLang);
     } catch (error) {
       console.error('Error getting response:', error);
       const errorMessage: Message = {
-        text: responses[selectedLanguage as keyof typeof responses].default,
+        text: responses[detectedLang as keyof typeof responses]?.default || responses.english.default,
         isUser: false,
         timestamp: new Date()
       };
@@ -286,25 +303,22 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
         
         setTimeout(async () => {
           setIsLoading(true);
+          const detectedLang = detectLanguageFromText(initialMessage);
+          
           try {
             const botResponse = await getResponse(initialMessage);
+            const botMessage: Message = {
+              text: botResponse,
+              isUser: false,
+              timestamp: new Date()
+            };
+            setMessages(prev => [...prev, botMessage]);
             
-            if (!showLanguageSelector) {
-              const botMessage: Message = {
-                text: botResponse,
-                isUser: false,
-                timestamp: new Date()
-              };
-              setMessages(prev => [...prev, botMessage]);
-              speakText(botResponse);
-            } else {
-              const botMessage: Message = {
-                text: botResponse,
-                isUser: false,
-                timestamp: new Date()
-              };
-              setMessages(prev => [...prev, botMessage]);
-            }
+            // Use detected language for speech
+            const oldLang = selectedLanguage;
+            setSelectedLanguage(detectedLang);
+            speakText(botResponse);
+            setSelectedLanguage(oldLang);
           } catch (error) {
             console.error('Error in initial response:', error);
           } finally {
@@ -390,52 +404,7 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
               </div>
             ))}
             
-            {showLanguageSelector && (
-              <div className="mb-3 text-center">
-                <div className="grid grid-cols-2 gap-2">
-                  {Object.entries(languages).map(([key, lang]) => (
-                    <button
-                      key={key}
-                      onClick={async () => {
-                        setShowLanguageSelector(false);
-                        setIsLoading(true);
-                        
-                        const langMessage: Message = {
-                          text: `Selected: ${lang.name}`,
-                          isUser: true,
-                          timestamp: new Date()
-                        };
-                        setMessages(prev => [...prev, langMessage]);
-                        
-                        try {
-                          const treatmentResponse = await callGeminiAPI(pendingTreatmentMessage, key);
-                          const botMessage: Message = {
-                            text: treatmentResponse,
-                            isUser: false,
-                            timestamp: new Date()
-                          };
-                          setMessages(prev => [...prev, botMessage]);
-                          
-                          // Set language for speech
-                          const oldLang = selectedLanguage;
-                          setSelectedLanguage(key);
-                          speakText(treatmentResponse);
-                          setSelectedLanguage(oldLang);
-                        } catch (error) {
-                          console.error('Error getting treatment response:', error);
-                        } finally {
-                          setIsLoading(false);
-                          setPendingTreatmentMessage('');
-                        }
-                      }}
-                      className="bg-blue-600 text-white px-3 py-2 rounded text-sm hover:bg-blue-700"
-                    >
-                      {lang.name}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+
             
             <div ref={messagesEndRef} />
           </div>
