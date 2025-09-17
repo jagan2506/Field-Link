@@ -36,7 +36,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
   const nextImage = () => setCurrentImage((prev) => (prev + 1) % images.length);
   const prevImage = () => setCurrentImage((prev) => (prev - 1 + images.length) % images.length);
   
-  const analyzeImage = async (imageData: string, imageIndex: number) => {
+  const analyzeImage = async (imageData: string, imageIndex: number, selectedLang: string) => {
     setIsAnalyzing(true);
     
     try {
@@ -59,11 +59,21 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
       };
       
       setAnalysisResults(prev => ({ ...prev, [imageIndex]: finalResults }));
-      setAnalysisComplete(true);
-      // Auto-show language dialog after analysis
-      setTimeout(() => {
-        setShowLanguageDialog(true);
-      }, 500);
+      
+      // Auto-open ChatBot with analysis results
+      if (onOpenChatBot) {
+        const analysisData = {
+          ...finalResults,
+          imageUrl: imageData,
+          selectedLanguage: selectedLang
+        };
+        
+        const remedyMessage = finalResults.diseaseDetected 
+          ? `Provide detailed treatment remedies for ${finalResults.diseaseName} disease with ${finalResults.severity} severity.`
+          : `Provide maintenance tips for this healthy plant with NDVI ${finalResults.ndvi}.`;
+        
+        onOpenChatBot(remedyMessage, analysisData);
+      }
     } catch (error) {
       console.error('Image analysis failed:', error);
     } finally {
@@ -87,40 +97,21 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
     }
   };
   
-  const handleProceedAnalysis = async () => {
+  const handleProceedAnalysis = () => {
+    setShowConfirmDialog(false);
+    setShowLanguageDialog(true);
+  };
+  
+  const handleAnalysisWithLanguage = async (selectedLang: string) => {
+    setShowLanguageDialog(false);
+    
     if (pendingImageData) {
-      setShowConfirmDialog(false);
-      await analyzeImage(pendingImageData.data, pendingImageData.index);
+      await analyzeImage(pendingImageData.data, pendingImageData.index, selectedLang);
       setPendingImageData(null);
     }
   };
   
-  const handleLanguageSelection = (selectedLang: string) => {
-    setShowLanguageDialog(false);
-    
-    const analysis = analysisResults[currentImage];
-    if (analysis && onOpenChatBot) {
-      const imageData = capturedImages[currentImage] || defaultImages[currentImage].url;
-      const analysisData = {
-        ndvi: analysis.ndvi,
-        healthStatus: analysis.healthStatus,
-        diseaseDetected: analysis.diseaseDetected,
-        diseaseName: analysis.diseaseName,
-        severity: analysis.severity,
-        chlorophyll: analysis.chlorophyll,
-        confidence: analysis.confidence,
-        remedies: analysis.remedies || [],
-        imageUrl: imageData,
-        selectedLanguage: selectedLang
-      };
-      
-      const remedyMessage = analysis.diseaseDetected 
-        ? `Provide detailed treatment remedies and care instructions for ${analysis.diseaseName} disease with ${analysis.severity} severity detected in this plant image.`
-        : `Provide maintenance tips and preventive care suggestions for this healthy plant with NDVI ${analysis.ndvi}.`;
-      
-      onOpenChatBot(remedyMessage, analysisData);
-    }
-  };
+
   
   const handleCancelAnalysis = () => {
     if (pendingImageData) {
@@ -178,25 +169,25 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
             </p>
             <div className="grid grid-cols-2 gap-3 mb-6">
               <button
-                onClick={() => handleLanguageSelection('english')}
+                onClick={() => handleAnalysisWithLanguage('english')}
                 className="p-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
               >
                 English
               </button>
               <button
-                onClick={() => handleLanguageSelection('tamil')}
+                onClick={() => handleAnalysisWithLanguage('tamil')}
                 className="p-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
               >
                 தமிழ்
               </button>
               <button
-                onClick={() => handleLanguageSelection('malayalam')}
+                onClick={() => handleAnalysisWithLanguage('malayalam')}
                 className="p-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
               >
                 മലയാളം
               </button>
               <button
-                onClick={() => handleLanguageSelection('telugu')}
+                onClick={() => handleAnalysisWithLanguage('telugu')}
                 className="p-3 border border-gray-300 rounded-lg hover:bg-blue-50 hover:border-blue-300 transition-colors"
               >
                 తెలుగు
