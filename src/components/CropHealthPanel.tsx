@@ -60,7 +60,10 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
       
       setAnalysisResults(prev => ({ ...prev, [imageIndex]: finalResults }));
       setAnalysisComplete(true);
-      setShowLanguageDialog(true);
+      // Auto-show language dialog after analysis
+      setTimeout(() => {
+        setShowLanguageDialog(true);
+      }, 500);
     } catch (error) {
       console.error('Image analysis failed:', error);
     } finally {
@@ -95,24 +98,25 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
   const handleLanguageSelection = (selectedLang: string) => {
     setShowLanguageDialog(false);
     
-    if (currentAnalysis && onOpenChatBot) {
+    const analysis = analysisResults[currentImage];
+    if (analysis && onOpenChatBot) {
       const imageData = capturedImages[currentImage] || defaultImages[currentImage].url;
       const analysisData = {
-        ndvi: currentAnalysis.ndvi,
-        healthStatus: currentAnalysis.healthStatus,
-        diseaseDetected: currentAnalysis.diseaseDetected,
-        diseaseName: currentAnalysis.diseaseName,
-        severity: currentAnalysis.severity,
-        chlorophyll: currentAnalysis.chlorophyll,
-        confidence: currentAnalysis.confidence,
-        remedies: currentAnalysis.remedies || [],
+        ndvi: analysis.ndvi,
+        healthStatus: analysis.healthStatus,
+        diseaseDetected: analysis.diseaseDetected,
+        diseaseName: analysis.diseaseName,
+        severity: analysis.severity,
+        chlorophyll: analysis.chlorophyll,
+        confidence: analysis.confidence,
+        remedies: analysis.remedies || [],
         imageUrl: imageData,
         selectedLanguage: selectedLang
       };
       
-      const remedyMessage = currentAnalysis.diseaseDetected 
-        ? `Provide detailed treatment remedies and care instructions for ${currentAnalysis.diseaseName} disease with ${currentAnalysis.severity} severity detected in this plant image.`
-        : `Provide maintenance tips and preventive care suggestions for this healthy plant with NDVI ${currentAnalysis.ndvi}.`;
+      const remedyMessage = analysis.diseaseDetected 
+        ? `Provide detailed treatment remedies and care instructions for ${analysis.diseaseName} disease with ${analysis.severity} severity detected in this plant image.`
+        : `Provide maintenance tips and preventive care suggestions for this healthy plant with NDVI ${analysis.ndvi}.`;
       
       onOpenChatBot(remedyMessage, analysisData);
     }
