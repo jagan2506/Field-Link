@@ -83,28 +83,50 @@ const ChatBot: React.FC = () => {
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = languages[selectedLanguage as keyof typeof languages].code;
-      
-      const voices = speechSynthesis.getVoices();
       const targetLang = languages[selectedLanguage as keyof typeof languages].code;
+      utterance.lang = targetLang;
       
-      // Find Indian female voice or closest match
-      const indianFemaleVoice = voices.find(voice => 
-        (voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0])) &&
-        (voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman') || 
-         voice.name.toLowerCase().includes('indian') || voice.name.toLowerCase().includes('hindi'))
-      ) || voices.find(voice => 
-        voice.lang === targetLang || voice.lang.startsWith(targetLang.split('-')[0])
-      );
+      // Wait for voices to load
+      const setVoiceAndSpeak = () => {
+        const voices = speechSynthesis.getVoices();
+        
+        // Find best voice for each language
+        let selectedVoice = null;
+        
+        if (selectedLanguage === 'telugu') {
+          selectedVoice = voices.find(voice => 
+            voice.lang.includes('te') || voice.name.toLowerCase().includes('telugu')
+          ) || voices.find(voice => voice.lang.startsWith('hi'));
+        } else if (selectedLanguage === 'malayalam') {
+          selectedVoice = voices.find(voice => 
+            voice.lang.includes('ml') || voice.name.toLowerCase().includes('malayalam')
+          ) || voices.find(voice => voice.lang.startsWith('hi'));
+        } else if (selectedLanguage === 'tamil') {
+          selectedVoice = voices.find(voice => 
+            voice.lang.includes('ta') || voice.name.toLowerCase().includes('tamil')
+          ) || voices.find(voice => voice.lang.startsWith('hi'));
+        } else {
+          selectedVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && 
+            (voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman'))
+          ) || voices.find(voice => voice.lang.startsWith('en'));
+        }
+        
+        if (selectedVoice) {
+          utterance.voice = selectedVoice;
+        }
+        
+        utterance.rate = 0.6;
+        utterance.pitch = 1.2;
+        utterance.volume = 1.0;
+        speechSynthesis.speak(utterance);
+      };
       
-      if (indianFemaleVoice) {
-        utterance.voice = indianFemaleVoice;
+      if (speechSynthesis.getVoices().length === 0) {
+        speechSynthesis.onvoiceschanged = setVoiceAndSpeak;
+      } else {
+        setVoiceAndSpeak();
       }
-      
-      utterance.rate = 0.7;
-      utterance.pitch = 1.3;
-      utterance.volume = 0.9;
-      speechSynthesis.speak(utterance);
     }
   };
 
