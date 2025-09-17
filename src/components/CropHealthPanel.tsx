@@ -60,17 +60,18 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
       
       setAnalysisResults(prev => ({ ...prev, [imageIndex]: finalResults }));
       
-      // Auto-open ChatBot with analysis results
+      // Auto-open ChatBot with analysis results using page language
       if (onOpenChatBot) {
         const analysisData = {
           ...finalResults,
           imageUrl: imageData,
-          selectedLanguage: selectedLang
+          imageBase64: imageData,
+          pageLanguage: selectedLang
         };
         
         const remedyMessage = finalResults.diseaseDetected 
-          ? `Provide detailed treatment remedies for ${finalResults.diseaseName} disease with ${finalResults.severity} severity.`
-          : `Provide maintenance tips for this healthy plant with NDVI ${finalResults.ndvi}.`;
+          ? `Analyze this plant image and provide detailed treatment remedies for ${finalResults.diseaseName} disease with ${finalResults.severity} severity. Use the captured image for context.`
+          : `Analyze this healthy plant image with NDVI ${finalResults.ndvi} and provide maintenance tips.`;
         
         onOpenChatBot(remedyMessage, analysisData);
       }

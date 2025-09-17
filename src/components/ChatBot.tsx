@@ -145,60 +145,52 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldO
   };
 
   const getResponse = async (input: string): Promise<string> => {
-    // Detect language from user input
-    const detectedLang = detectLanguageFromText(input);
+    // Use page language if available from analysis data, otherwise detect from input
+    const responseLang = analysisData?.pageLanguage || detectLanguageFromText(input);
     
     // Check if input is asking for remedies/treatment in any language
     const isRemedyRequest = input.toLowerCase().includes('remedy') || 
                            input.toLowerCase().includes('treatment') || 
+                           input.toLowerCase().includes('analyze') ||
                            input.toLowerCase().includes('cure') || 
                            input.toLowerCase().includes('medicine') || 
                            input.toLowerCase().includes('disease') ||
                            input.toLowerCase().includes('pest') ||
                            input.toLowerCase().includes('problem') ||
                            input.toLowerCase().includes('help') ||
-                           input.toLowerCase().includes('fix') ||
-                           // Tamil keywords
-                           input.includes('மருந்து') || input.includes('சிகிச்சை') || input.includes('நோய்') ||
-                           // Malayalam keywords  
-                           input.includes('മരുന്ന്') || input.includes('ചികിത്സ') || input.includes('രോഗം') ||
-                           // Telugu keywords
-                           input.includes('మందు') || input.includes('చికిత്స') || input.includes('వ్యాధి');
+                           input.toLowerCase().includes('fix');
     
-    if (isRemedyRequest) {
-      // Get medicine recommendations
-      const medicines = getMedicineRecommendations(input, detectedLang);
-      const medicineResponse = formatMedicineResponse(medicines, detectedLang);
+    if (isRemedyRequest && analysisData) {
+      // Get medicine recommendations based on page language
+      const medicines = getMedicineRecommendations(analysisData.diseaseName || input, responseLang);
+      const medicineResponse = formatMedicineResponse(medicines, responseLang);
       
       try {
-        // Create enhanced prompt with real image analysis data
-        let prompt = `Based on the captured plant image analysis, provide detailed treatment advice in ${detectedLang} language.\n\n${input}`;
+        // Create enhanced prompt with image analysis and image data
+        let prompt = `You are analyzing a plant image. Based on the image analysis results, provide detailed treatment advice in ${responseLang} language.\n\n${input}`;
         
-        if (analysisData) {
-          prompt += `\n\nActual Image Analysis Results:
-- NDVI Index: ${analysisData.ndvi} (vegetation health indicator)
-- Overall Health Status: ${analysisData.healthStatus}
-- Disease Detection: ${analysisData.diseaseDetected ? `${analysisData.diseaseName} detected` : 'No disease detected'}
-- Disease Severity: ${analysisData.severity}
-- Analysis Confidence: ${analysisData.confidence}%
-- Chlorophyll Level: ${analysisData.chlorophyll}`;
-          
-          if (analysisData.remedies && analysisData.remedies.length > 0) {
-            prompt += `\n- Recommended Treatments: ${analysisData.remedies.join(', ')}`;
-          }
-          
-          prompt += `\n\nPlease provide:
-1. Detailed explanation of the detected condition
-2. Step-by-step treatment instructions
-3. Prevention measures
-4. Care tips for recovery
-5. Timeline for expected improvement
-
-Respond in ${detectedLang} language with proper agricultural terminology.`;
+        prompt += `\n\nImage Analysis Results from captured photo:
+- NDVI Index: ${analysisData.ndvi} (vegetation health)
+- Health Status: ${analysisData.healthStatus}
+- Disease: ${analysisData.diseaseDetected ? analysisData.diseaseName : 'None detected'}
+- Severity: ${analysisData.severity}
+- Confidence: ${analysisData.confidence}%
+- Chlorophyll: ${analysisData.chlorophyll}`;
+        
+        if (analysisData.remedies && analysisData.remedies.length > 0) {
+          prompt += `\n- Quick Remedies: ${analysisData.remedies.join(', ')}`;
         }
         
+        prompt += `\n\nBased on this captured plant image analysis, provide:
+1. Disease explanation in ${responseLang}
+2. Step-by-step treatment in ${responseLang}
+3. Prevention measures in ${responseLang}
+4. Recovery timeline
+
+Respond entirely in ${responseLang} language.`;
+        
         prompt += `\n\nMedicine recommendations: ${medicineResponse}`;
-        const geminiResponse = await callGeminiAPI(prompt, detectedLang);
+        const geminiResponse = await callGeminiAPI(prompt, responseLang);
         return `${geminiResponse}\n\n${medicineResponse}`;
       } catch (error) {
         console.error('Gemini API failed, using medicine fallback:', error);
@@ -207,17 +199,17 @@ Respond in ${detectedLang} language with proper agricultural terminology.`;
     }
     
     try {
-      // Include analysis data in general queries if available
+      // Include image analysis data in general queries
       let prompt = input;
       if (analysisData) {
-        prompt += `\n\nCurrent Plant Analysis: NDVI ${analysisData.ndvi}, Health: ${analysisData.healthStatus}, Chlorophyll: ${analysisData.chlorophyll}`;
+        prompt += `\n\nPlant Image Analysis: NDVI ${analysisData.ndvi}, Health: ${analysisData.healthStatus}, Disease: ${analysisData.diseaseDetected ? analysisData.diseaseName : 'Healthy'}`;
       }
       
-      const geminiResponse = await callGeminiAPI(prompt, detectedLang);
+      const geminiResponse = await callGeminiAPI(prompt, responseLang);
       return geminiResponse;
     } catch (error) {
       console.error('Gemini API failed, using fallback:', error);
-      const lang = detectedLang as keyof typeof responses;
+      const lang = responseLang as keyof typeof responses;
       return responses[lang]?.default || responses.english.default;
     }
   };
@@ -249,8 +241,8 @@ Respond in ${detectedLang} language with proper agricultural terminology.`;
       };
       setMessages(prev => [...prev, botMessage]);
       
-      // Use selected language from analysis or detected language for speech
-      const speechLang = analysisData?.selectedLanguage || detectedLang;
+      // Use page language from analysis data for speech
+      const speechLang = analysisData?.pageLanguage || detectedLang;
       const oldLang = selectedLanguage;
       setSelectedLanguage(speechLang);
       speakText(botResponse);
