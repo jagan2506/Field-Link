@@ -143,6 +143,23 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
   };
 
   const getResponse = async (input: string): Promise<string> => {
+    // Check if input is asking for remedies/treatment
+    const isRemedyRequest = input.toLowerCase().includes('remedy') || 
+                           input.toLowerCase().includes('treatment') || 
+                           input.toLowerCase().includes('cure') || 
+                           input.toLowerCase().includes('medicine') || 
+                           input.toLowerCase().includes('disease') ||
+                           input.toLowerCase().includes('pest') ||
+                           input.toLowerCase().includes('problem') ||
+                           input.toLowerCase().includes('help') ||
+                           input.toLowerCase().includes('fix');
+    
+    if (isRemedyRequest && !showLanguageSelector) {
+      setPendingTreatmentMessage(input);
+      setShowLanguageSelector(true);
+      return responses[selectedLanguage as keyof typeof responses].languagePrompt;
+    }
+    
     try {
       const geminiResponse = await callGeminiAPI(input, selectedLanguage);
       return geminiResponse;
@@ -169,13 +186,25 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
     
     try {
       const botResponse = await getResponse(currentInput);
-      const botMessage: Message = {
-        text: botResponse,
-        isUser: false,
-        timestamp: new Date()
-      };
-      setMessages(prev => [...prev, botMessage]);
-      speakText(botResponse);
+      
+      // Don't add bot message if language selector is shown
+      if (!showLanguageSelector) {
+        const botMessage: Message = {
+          text: botResponse,
+          isUser: false,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botMessage]);
+        speakText(botResponse);
+      } else {
+        // Add the language prompt message
+        const botMessage: Message = {
+          text: botResponse,
+          isUser: false,
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, botMessage]);
+      }
     } catch (error) {
       console.error('Error getting response:', error);
       const errorMessage: Message = {
@@ -248,38 +277,19 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
     if (shouldOpen) {
       setIsOpen(true);
       if (initialMessage) {
-        // Check if it's a treatment plan request
-        if (initialMessage.toLowerCase().includes('treatment') || initialMessage.toLowerCase().includes('remedies')) {
-          setPendingTreatmentMessage(initialMessage);
-          setShowLanguageSelector(true);
-          
-          const userMessage: Message = {
-            text: initialMessage,
-            isUser: true,
-            timestamp: new Date()
-          };
-          
-          const promptMessage: Message = {
-            text: responses[selectedLanguage as keyof typeof responses].languagePrompt,
-            isUser: false,
-            timestamp: new Date()
-          };
-          
-          setMessages([userMessage, promptMessage]);
-        } else {
-          // Send the initial message automatically
-          const userMessage: Message = {
-            text: initialMessage,
-            isUser: true,
-            timestamp: new Date()
-          };
-          setMessages([userMessage]);
-          
-          // Get AI response
-          setTimeout(async () => {
-            setIsLoading(true);
-            try {
-              const botResponse = await getResponse(initialMessage);
+        const userMessage: Message = {
+          text: initialMessage,
+          isUser: true,
+          timestamp: new Date()
+        };
+        setMessages([userMessage]);
+        
+        setTimeout(async () => {
+          setIsLoading(true);
+          try {
+            const botResponse = await getResponse(initialMessage);
+            
+            if (!showLanguageSelector) {
               const botMessage: Message = {
                 text: botResponse,
                 isUser: false,
@@ -287,13 +297,20 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, shouldOpen, onClose }
               };
               setMessages(prev => [...prev, botMessage]);
               speakText(botResponse);
-            } catch (error) {
-              console.error('Error in initial response:', error);
-            } finally {
-              setIsLoading(false);
+            } else {
+              const botMessage: Message = {
+                text: botResponse,
+                isUser: false,
+                timestamp: new Date()
+              };
+              setMessages(prev => [...prev, botMessage]);
             }
-          }, 1000);
-        }
+          } catch (error) {
+            console.error('Error in initial response:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        }, 1000);
       }
     }
   }, [shouldOpen, initialMessage]);
