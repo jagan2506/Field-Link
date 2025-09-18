@@ -34,6 +34,7 @@ export interface Translations {
   next: string;
   save: string;
   close: string;
+  cancel: string;
 
   // Crop health panel
   analysisResults: string;
@@ -50,7 +51,6 @@ export interface Translations {
   getCareTips: string;
   analyzeImage: string;
   proceedAnalysis: string;
-  cancel: string;
 
   // Data charts
   hours24: string;
@@ -116,6 +116,7 @@ export const translations: Record<Language, Translations> = {
     next: "Next",
     save: "Save",
     close: "Close",
+    cancel: "Cancel",
 
     analysisResults: "Analysis Results",
     ndviIndex: "NDVI Index",
@@ -192,6 +193,7 @@ export const translations: Record<Language, Translations> = {
     next: "அடுத்த",
     save: "சேமிக்கவும்",
     close: "மூடு",
+    cancel: "ரத்து செய்",
 
     analysisResults: "பகுப்பாய்வு முடிவுகள்",
     ndviIndex: "NDVI குறியீடு",
@@ -268,6 +270,7 @@ export const translations: Record<Language, Translations> = {
     next: "അടുത്തത്",
     save: "സേവ് ചെയ്യുക",
     close: "അടയ്ക്കുക",
+    cancel: "രദ്ദാക്കുക",
 
     analysisResults: "വിശകലന ഫലങ്ങൾ",
     ndviIndex: "NDVI സൂചിക",
@@ -344,6 +347,7 @@ export const translations: Record<Language, Translations> = {
     next: "తదుపరి",
     save: "సేవ్ చేయండి",
     close: "మూసివేయండి",
+    cancel: "రద్దు చేయండి",
 
     analysisResults: "విశ్లేషణ ఫలితాలు",
     ndviIndex: "NDVI సూచిక",

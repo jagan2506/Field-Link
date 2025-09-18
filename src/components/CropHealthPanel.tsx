@@ -328,7 +328,8 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
                     </>
                   )}
                 </>
-              ) : (
+              ) :
+                 
                 <>
                   <li>• Multispectral analysis available</li>
                   <li>• Current status: {cropHealth.status.toLowerCase()}</li>
@@ -337,7 +338,7 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
               )}
             </ul>
           </div>
-        </div>
+,../,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,,/        </div>
       </div>
     </section>
   );
