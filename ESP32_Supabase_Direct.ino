@@ -5,8 +5,8 @@
 #include <DallasTemperature.h>
 
 // WiFi credentials
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
+const char* ssid = "JAGAN";
+const char* password = "jagan@1234";
 
 // Supabase credentials
 const char* supabaseUrl = "https://gmlollhziblltvgxccfl.supabase.co";
@@ -23,7 +23,7 @@ void setup() {
   Serial.begin(115200);
   tempSensor.begin();
   
-  WiFi.begin(ssid, password);
+  WiFi.begin(JAGAN, jagan@1234);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi...");
@@ -36,8 +36,18 @@ void loop() {
   tempSensor.requestTemperatures();
   float temperature = tempSensor.getTempCByIndex(0);
   int soilMoistureRaw = analogRead(SOIL_MOISTURE_PIN);
-  int soilMoisture = map(soilMoistureRaw, 3000, 1000, 0, 100); // Convert to percentage
-  float phLevel = 6.8; // Mock pH value
+  
+  // Convert soil moisture (dry=3000, wet=1000 to 0-100%)
+  int soilMoisture = constrain(map(soilMoistureRaw, 3000, 1000, 0, 100), 0, 100);
+  
+  // Calculate pH based on soil moisture (simulation)
+  float phLevel = 6.0 + (soilMoisture / 100.0) * 1.5; // pH 6.0-7.5 range
+  
+  // Print readings
+  Serial.println("=== Sensor Readings ===");
+  Serial.println("Temperature: " + String(temperature) + "°C");
+  Serial.println("Soil Moisture: " + String(soilMoisture) + "% (Raw: " + String(soilMoistureRaw) + ")");
+  Serial.println("pH Level: " + String(phLevel));
   
   // Send to Supabase
   sendToSupabase(temperature, soilMoisture, phLevel);

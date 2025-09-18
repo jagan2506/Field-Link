@@ -11,7 +11,7 @@ import AlertConfigModal from './components/AlertConfigModal';
 import AlertViewModal from './components/AlertViewModal';
 import { generateMockData, SensorData } from './utils/mockData';
 import { IoTSensorManager } from './utils/iotSensors';
-import { insertSensorData, insertSoilConditionAI, getMonitoringDashboard } from './utils/supabaseClient';
+import { insertSensorData, getMonitoringDashboard, testConnection } from './utils/firebaseClient';
 import { AIMonitoringSystem } from './utils/aiMonitoring';
 import { generatePDF } from './utils/pdfGenerator';
 import { useLanguage } from './contexts/LanguageContext';
@@ -38,43 +38,46 @@ function App() {
   const [sensorStatus, setSensorStatus] = useState('Disconnected');
 
   useEffect(() => {
+    // Test Supabase connection on app start
+    testConnection();
+    
     const fetchSensorData = async () => {
-      if (useRealSensors) {
-        setSensorStatus('Connecting...');
-        const realData = await iotSensorManager.getSensorReadings();
-        if (realData) {
-          setSensorStatus('Connected - Live Data');
-          const mockData = generateMockData();
-          const sensorData = {
-            ...mockData,
-            temperature: realData.temperature,
-            soilMoisture: realData.soilMoisture
-          };
-          
-          // Save to Supabase (with error handling)
-          try {
-            const sensorRecord = await insertSensorData(realData.temperature, realData.soilMoisture, mockData.phLevel);
-            
-            // Perform AI soil analysis
-            const soilAnalysis = AIMonitoringSystem.analyzeSoilCondition(sensorData);
-            if (sensorRecord?.[0]?.id) {
-              await insertSoilConditionAI(sensorRecord[0].id, soilAnalysis);
-            }
-          } catch (supabaseError) {
-            console.warn('Supabase sensor save failed:', supabaseError);
+      setSensorStatus('Connecting...');
+      const realData = await iotSensorManager.getSensorReadings();
+      
+      if (realData) {
+        setSensorStatus('ESP32 Connected - Live Data');
+        setUseRealSensors(true);
+        
+        // Use real sensor data with calculated pH
+        const sensorData = {
+          temperature: realData.temperature,
+          soilMoisture: realData.soilMoisture,
+          phLevel: 6.5 + (Math.random() * 1.0), // Simulated pH sensor
+          cropHealth: {
+            status: realData.soilMoisture > 50 && realData.temperature < 30 ? 'Healthy' : 
+                   realData.soilMoisture > 30 ? 'Moderate' : 'Poor',
+            ndvi: realData.soilMoisture > 50 ? 0.7 + Math.random() * 0.2 : 0.4 + Math.random() * 0.3,
+            chlorophyllLevel: realData.temperature < 30 ? 'High' : 'Medium',
+            coverage: Math.min(95, realData.soilMoisture + 20)
           }
-          
-          setSensorData(sensorData);
-          setLastUpdate(realData.timestamp);
-          return;
-        } else {
-          setSensorStatus('ESP32 Not Found');
+        };
+        
+        // Save to Firebase
+        try {
+          await insertSensorData(realData.temperature, realData.soilMoisture, sensorData.phLevel);
+        } catch (firebaseError) {
+          console.warn('Firebase save failed:', firebaseError);
         }
+        
+        setSensorData(sensorData);
+        setLastUpdate(realData.timestamp);
       } else {
-        setSensorStatus('Using Mock Data');
+        setSensorStatus('ESP32 Not Found - Using Mock Data');
+        setUseRealSensors(false);
+        setSensorData(generateMockData());
+        setLastUpdate(new Date());
       }
-      setSensorData(generateMockData());
-      setLastUpdate(new Date());
     };
 
     fetchSensorData();
@@ -85,6 +88,16 @@ function App() {
   const handleDownloadReport = () => {
     if (sensorData) {
       generatePDF(sensorData, t);
+    }
+  };
+
+  const handleViewFirebaseData = async () => {
+    const data = await getMonitoringDashboard();
+    if (data && data.length > 0) {
+      console.log('📊 Firebase Data:', data);
+      alert(`Found ${data.length} records in Firebase database`);
+    } else {
+      alert('No data found in Firebase database');
     }
   };
 
@@ -168,19 +181,17 @@ function App() {
           <div className="flex flex-col items-center gap-1">
             <button 
               onClick={() => {
-                if (!useRealSensors) {
-                  const esp32IP = prompt('Enter ESP32 IP address:', '192.168.1.100');
-                  if (esp32IP) {
-                    iotSensorManager.setESP32IP(esp32IP);
-                  }
+                const esp8266IP = prompt('Enter ESP8266 IP address:', '192.168.1.100');
+                if (esp8266IP) {
+                  iotSensorManager.setESP32IP(esp8266IP);
+                  console.log('🔗 Connecting to ESP8266 at:', esp8266IP);
                 }
-                setUseRealSensors(!useRealSensors);
               }}
               className={`flex items-center justify-center space-x-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                 useRealSensors ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-gray-600 hover:bg-gray-700 text-white'
               }`}
             >
-              <span>{useRealSensors ? '🔗 IoT Live' : '📡 Connect ESP32'}</span>
+              <span>📡 Connect ESP8266</span>
             </button>
             <span className={`text-xs px-2 py-1 rounded ${
               sensorStatus === 'Connected - Live Data' ? 'bg-green-100 text-green-700' :
@@ -211,6 +222,12 @@ function App() {
           >
             <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>{t.viewAllAlerts}</span>
+          </button>
+          <button 
+            onClick={handleViewFirebaseData}
+            className="flex items-center justify-center space-x-2 bg-purple-600 text-white px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg hover:bg-purple-700 transition-colors text-sm sm:text-base"
+          >
+            <span>📊 View Database</span>
           </button>
         </section>
       </main>

@@ -10,8 +10,8 @@ export class IoTSensorManager {
   private isConnected: boolean = false;
   private connectionStatus: string = 'Disconnected';
 
-  constructor(esp32Ip: string = '192.168.1.100') {
-    this.esp32Url = `http://${esp32Ip}`;
+  constructor(esp8266Ip: string = '192.168.1.100') {
+    this.esp32Url = `http://${esp8266Ip}`;
   }
 
   getConnectionStatus(): string {
@@ -45,37 +45,36 @@ export class IoTSensorManager {
 
   async getSensorReadings(): Promise<SensorReading | null> {
     // Try ESP32 first
-    if (!this.isConnected) {
-      await this.connectToESP32();
-    }
-
     try {
-      const response = await fetch(`${this.esp32Url}/sensors`);
+      const response = await fetch(`${this.esp32Url}/sensors`, { timeout: 5000 });
       const data = await response.json();
       
-      return {
-        temperature: parseFloat(data.temperature),
-        soilMoisture: this.convertMoistureReading(data.soilMoisture),
-        timestamp: new Date()
-      };
+      if (data.status === 'live') {
+        console.log('📡 ESP32 Live Data:', data);
+        this.isConnected = true;
+        return {
+          temperature: parseFloat(data.temperature),
+          soilMoisture: data.soilMoisturePercent || this.convertMoistureReading(data.soilMoisture),
+          timestamp: new Date()
+        };
+      }
     } catch (error) {
-      console.error('ESP32 failed, trying Supabase:', error);
-      return this.getFromSupabase();
+      console.warn('ESP32 not available, trying Supabase fallback');
+      this.isConnected = false;
     }
+    
+    // Fallback to Firebase
+    return this.getFromFirebase();
   }
 
-  async getFromSupabase(): Promise<SensorReading | null> {
+  async getFromFirebase(): Promise<SensorReading | null> {
     try {
-      const response = await fetch('https://gmlollhziblltvgxccfl.supabase.co/rest/v1/sensor_readings?select=*&order=timestamp.desc&limit=1', {
-        headers: {
-          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtbG9sbGh6aWJsbHR2Z3hjY2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNzUwMTUsImV4cCI6MjA3Mzc1MTAxNX0.ObULZe5cgYMCy5DU5cw19G5qbum-HAyhKQ4lq-WwZJw',
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtbG9sbGh6aWJsbHR2Z3hjY2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNzUwMTUsImV4cCI6MjA3Mzc1MTAxNX0.ObULZe5cgYMCy5DU5cw19G5qbum-HAyhKQ4lq-WwZJw'
-        }
-      });
-      
+      const response = await fetch('https://agriai-90ab6-default-rtdb.firebaseio.com/sensor_readings.json?orderBy="timestamp"&limitToLast=1');
       const data = await response.json();
-      if (data && data.length > 0) {
-        const latest = data[0];
+      
+      if (data) {
+        const latestKey = Object.keys(data)[0];
+        const latest = data[latestKey];
         return {
           temperature: latest.temperature,
           soilMoisture: latest.soil_moisture,
@@ -84,7 +83,7 @@ export class IoTSensorManager {
       }
       return null;
     } catch (error) {
-      console.error('Supabase fetch failed:', error);
+      console.error('Firebase fetch failed:', error);
       return null;
     }
   }
