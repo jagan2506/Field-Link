@@ -1,0 +1,76 @@
+SUPABASE INTEGRATION SETUP GUIDE
+
+1. CREATE SUPABASE PROJECT:
+   - Go to https://supabase.com
+   - Click "New Project"
+   - Choose organization and project name
+   - Set database password
+   - Wait for project setup (2-3 minutes)
+
+2. RUN SQL QUERIES:
+   - Go to SQL Editor in Supabase dashboard
+   - Copy and paste all queries from supabase_queries.sql
+   - Click "Run" to create all tables
+   - Verify tables created in Table Editor
+
+3. GET PROJECT CREDENTIALS:
+   - Go to Settings → API
+   - Copy "Project URL" (https://xxx.supabase.co)
+   - Copy "anon public" key
+   - Copy "service_role" key (for admin operations)
+
+4. UPDATE REACT APP:
+   In src/utils/supabaseClient.ts, replace:
+   
+   const supabaseUrl = 'YOUR_SUPABASE_URL';
+   const supabaseKey = 'YOUR_SUPABASE_ANON_KEY';
+   
+   With your actual values:
+   
+   const supabaseUrl = 'https://xxxxx.supabase.co';
+   const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
+
+5. INSTALL SUPABASE CLIENT:
+   npm install @supabase/supabase-js
+
+6. TEST CONNECTION:
+   - Start your React app: npm run dev
+   - Capture plant image and analyze
+   - Check Supabase dashboard → Table Editor
+   - Verify data appears in tables:
+     * sensor_readings
+     * multispectral_analysis  
+     * pest_risk_analysis
+     * crop_health_ai
+     * soil_condition_ai
+
+7. ENABLE ROW LEVEL SECURITY (Optional):
+   - Go to Authentication → Policies
+   - Enable RLS on tables
+   - Create policies for public access:
+     
+     CREATE POLICY "Allow public read" ON sensor_readings
+     FOR SELECT USING (true);
+     
+     CREATE POLICY "Allow public insert" ON sensor_readings  
+     FOR INSERT WITH CHECK (true);
+
+8. REAL-TIME SUBSCRIPTIONS (Optional):
+   - Go to Database → Replication
+   - Enable realtime for tables
+   - Add to React app:
+     
+     supabase
+       .channel('sensor_data')
+       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sensor_readings' }, 
+           payload => console.log('New sensor data:', payload))
+       .subscribe();
+
+INTEGRATION FEATURES:
+✅ Automatic data saving to Supabase
+✅ Multispectral analysis storage
+✅ Pest risk assessment logging
+✅ AI crop health tracking
+✅ Soil condition monitoring
+✅ Comprehensive dashboard queries
+✅ Real-time IoT sensor integration

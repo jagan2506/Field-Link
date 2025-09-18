@@ -4,6 +4,7 @@ import { CropHealthData } from '../utils/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
 import { analyzeImageWithGemini } from '../utils/geminiImageAnalysis';
 import { AIMonitoringSystem, MultispectralData, PestRiskAnalysis } from '../utils/aiMonitoring';
+import { saveCompleteAnalysis, testConnection } from '../utils/supabaseClient';
 
 interface CropHealthPanelProps {
   cropHealth: CropHealthData;
@@ -71,6 +72,19 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
       // Perform pest risk analysis
       const pestRisk = AIMonitoringSystem.assessPestRisk({ temperature: 25, soilMoisture: 60 }, multispectral);
       setPestRiskData(prev => ({ ...prev, [imageIndex]: pestRisk }));
+      
+      // Save complete analysis to Supabase (with error handling)
+      try {
+        await saveCompleteAnalysis(
+          imageData,
+          multispectral,
+          pestRisk,
+          finalResults,
+          { temperature: 25, soilMoisture: 60, phLevel: 6.8, humidity: 65, lightIntensity: 800 }
+        );
+      } catch (supabaseError) {
+        console.warn('Supabase save failed, continuing without database:', supabaseError);
+      }
       
       setAnalysisResults(prev => ({ ...prev, [imageIndex]: finalResults }));
       

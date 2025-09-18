@@ -11,6 +11,8 @@ import AlertConfigModal from './components/AlertConfigModal';
 import AlertViewModal from './components/AlertViewModal';
 import { generateMockData, SensorData } from './utils/mockData';
 import { IoTSensorManager } from './utils/iotSensors';
+import { insertSensorData, insertSoilConditionAI, getMonitoringDashboard } from './utils/supabaseClient';
+import { AIMonitoringSystem } from './utils/aiMonitoring';
 import { generatePDF } from './utils/pdfGenerator';
 import { useLanguage } from './contexts/LanguageContext';
 
@@ -43,11 +45,26 @@ function App() {
         if (realData) {
           setSensorStatus('Connected - Live Data');
           const mockData = generateMockData();
-          setSensorData({
+          const sensorData = {
             ...mockData,
             temperature: realData.temperature,
             soilMoisture: realData.soilMoisture
-          });
+          };
+          
+          // Save to Supabase (with error handling)
+          try {
+            const sensorRecord = await insertSensorData(realData.temperature, realData.soilMoisture, mockData.phLevel);
+            
+            // Perform AI soil analysis
+            const soilAnalysis = AIMonitoringSystem.analyzeSoilCondition(sensorData);
+            if (sensorRecord?.[0]?.id) {
+              await insertSoilConditionAI(sensorRecord[0].id, soilAnalysis);
+            }
+          } catch (supabaseError) {
+            console.warn('Supabase sensor save failed:', supabaseError);
+          }
+          
+          setSensorData(sensorData);
           setLastUpdate(realData.timestamp);
           return;
         } else {
