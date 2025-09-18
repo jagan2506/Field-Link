@@ -69,14 +69,14 @@ function App() {
     <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50">
       <Header lastUpdate={lastUpdate} />
       
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+      <main className="max-w-7xl mx-auto px-2 xs:px-3 sm:px-4 md:px-6 lg:px-8 py-4 xs:py-6 sm:py-8 space-y-4 xs:space-y-6 sm:space-y-8">
         {/* Real-time Data Section */}
         <section>
-          <div className="flex items-center space-x-2 mb-6">
-            <TrendingUp className="w-6 h-6 text-green-600" />
-            <h2 className="text-2xl font-bold text-gray-800">{t.currentFieldConditions}</h2>
+          <div className="flex items-center space-x-2 mb-4 xs:mb-5 sm:mb-6">
+            <TrendingUp className="w-5 h-5 xs:w-6 xs:h-6 text-green-600" />
+            <h2 className="text-lg xs:text-xl sm:text-2xl font-bold text-gray-800">{t.currentFieldConditions}</h2>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 xs:grid-cols-2 lg:grid-cols-4 gap-3 xs:gap-4 sm:gap-6">
             <SensorCard
               icon={<Thermometer className="w-8 h-8" />}
               title={t.temperature}
@@ -126,26 +126,26 @@ function App() {
         <DataCharts />
 
         {/* Action Buttons */}
-        <section className="flex flex-wrap gap-4 justify-center">
+        <section className="flex flex-col xs:flex-row flex-wrap gap-2 xs:gap-3 sm:gap-4 justify-center">
           <button 
             onClick={handleDownloadReport}
-            className="flex items-center space-x-2 bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors"
+            className="flex items-center justify-center space-x-2 bg-green-600 text-white px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"
           >
-            <Download className="w-5 h-5" />
+            <Download className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>{t.downloadReport}</span>
           </button>
           <button 
             onClick={() => setIsConfigModalOpen(true)}
-            className="flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center justify-center space-x-2 bg-blue-600 text-white px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
           >
-            <Settings className="w-5 h-5" />
+            <Settings className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>{t.configureAlerts}</span>
           </button>
           <button 
             onClick={() => setIsAlertModalOpen(true)}
-            className="flex items-center space-x-2 bg-orange-600 text-white px-6 py-3 rounded-lg hover:bg-orange-700 transition-colors"
+            className="flex items-center justify-center space-x-2 bg-orange-600 text-white px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg hover:bg-orange-700 transition-colors text-sm sm:text-base"
           >
-            <Bell className="w-5 h-5" />
+            <Bell className="w-4 h-4 sm:w-5 sm:h-5" />
             <span>{t.viewAllAlerts}</span>
           </button>
         </section>

@@ -2,42 +2,41 @@ import { callGeminiAPI } from './geminiApi';
 
 export const analyzeImageWithGemini = async (imageBase64: string, language: string): Promise<any> => {
   try {
-    const prompt = `Analyze this plant image for diseases. Provide a detailed analysis in JSON format with the following structure:
+    const languageMap = {
+      'english': 'English',
+      'tamil': 'Tamil (தமிழ்)',
+      'malayalam': 'Malayalam (മലയാളം)',
+      'telugu': 'Telugu (తెలుగు)'
+    };
+    
+    const targetLanguage = languageMap[language as keyof typeof languageMap] || 'English';
+    
+    const prompt = `Analyze this plant image for diseases. Provide detailed analysis and remedies in ${targetLanguage} language.
+    
+    Provide response in JSON format:
     {
       "diseaseDetected": boolean,
       "diseases": [
         {
-          "name": "disease name",
+          "name": "disease name in ${targetLanguage}",
           "severity": "Early Stage/Moderate/Advanced",
           "confidence": "percentage",
-          "symptoms": ["symptom1", "symptom2"],
-          "remedies": ["remedy1", "remedy2", "remedy3"]
+          "symptoms": ["symptom1 in ${targetLanguage}", "symptom2 in ${targetLanguage}"],
+          "remedies": ["remedy1 in ${targetLanguage}", "remedy2 in ${targetLanguage}", "remedy3 in ${targetLanguage}"]
         }
       ],
       "healthStatus": "Healthy/Mild Disease/Moderate/Poor",
       "overallConfidence": "percentage",
-      "recommendations": ["general care tip 1", "general care tip 2"]
+      "recommendations": ["care tip 1 in ${targetLanguage}", "care tip 2 in ${targetLanguage}"]
     }
 
-    Look for these common plant diseases:
-    - Leaf Spot (brown/black spots on leaves)
-    - Early Blight (yellow patches with brown centers)
-    - Late Blight (dark water-soaked lesions)
-    - Powdery Mildew (white powdery coating)
-    - Bacterial Spot (small dark spots)
-    - Rust (orange/rust colored spots)
-    - Anthracnose (dark sunken lesions)
-    - Downy Mildew (yellow patches with fuzzy growth)
-    - Mosaic Virus (mottled yellow-green patterns)
-    - Wilt diseases (wilting, yellowing leaves)
-
-    For each detected disease, provide:
-    1. Specific fungicides/treatments
-    2. Cultural practices
-    3. Prevention methods
-    4. Application rates and timing
-
-    Respond in ${language} language for disease names and remedies.`;
+    IMPORTANT: All disease names, symptoms, remedies, and recommendations must be in ${targetLanguage} language.
+    
+    For remedies, include:
+    1. Specific medicine names with dosage in ${targetLanguage}
+    2. Application methods in ${targetLanguage}
+    3. Prevention steps in ${targetLanguage}
+    4. Care instructions in ${targetLanguage}`;
 
     const response = await callGeminiAPI(prompt, language);
     

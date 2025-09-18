@@ -169,40 +169,27 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldO
         // Create enhanced prompt with image analysis and image data
         let prompt = `You are analyzing a plant image. Based on the image analysis results, provide detailed treatment advice in ${responseLang} language.\n\n${input}`;
         
-        prompt += `\n\nComprehensive Plant Disease Analysis from Gemini AI:
-- Disease Status: ${analysisData.diseaseDetected ? 'Multiple diseases detected' : 'No disease detected'}
-- Primary Disease: ${analysisData.diseaseName} (${analysisData.severity})
-- Detection Confidence: ${analysisData.confidence}%
-- Overall Plant Health: ${analysisData.healthStatus}`;
+        // Use localized analysis data directly from Gemini
+        let localizedResponse = '';
         
         if (analysisData.allDiseases && analysisData.allDiseases.length > 0) {
-          prompt += `\n- All Detected Diseases:`;
           analysisData.allDiseases.forEach((disease: any, index: number) => {
-            prompt += `\n  ${index + 1}. ${disease.name} (${disease.severity}) - Confidence: ${disease.confidence}%`;
-            if (disease.symptoms) {
-              prompt += `\n     Symptoms: ${disease.symptoms.join(', ')}`;
+            localizedResponse += `\n\n${index + 1}. ${disease.name} (${disease.severity})\n`;
+            if (disease.symptoms && disease.symptoms.length > 0) {
+              localizedResponse += `Symptoms: ${disease.symptoms.join(', ')}\n`;
             }
-            if (disease.remedies) {
-              prompt += `\n     Remedies: ${disease.remedies.join(', ')}`;
+            if (disease.remedies && disease.remedies.length > 0) {
+              localizedResponse += `Remedies:\n${disease.remedies.map((remedy: string, i: number) => `- ${remedy}`).join('\n')}\n`;
             }
           });
         }
         
-        if (analysisData.remedies && analysisData.remedies.length > 0) {
-          prompt += `\n- Quick Remedies: ${analysisData.remedies.join(', ')}`;
+        if (analysisData.recommendations && analysisData.recommendations.length > 0) {
+          localizedResponse += `\n\nGeneral Care Tips:\n${analysisData.recommendations.map((rec: string, i: number) => `- ${rec}`).join('\n')}`;
         }
         
-        prompt += `\n\nBased on this captured plant image analysis, provide:
-1. Disease explanation in ${responseLang}
-2. Step-by-step treatment in ${responseLang}
-3. Prevention measures in ${responseLang}
-4. Recovery timeline
+        return localizedResponse || `Disease analysis completed. Health status: ${analysisData.healthStatus}`;
 
-Respond entirely in ${responseLang} language.`;
-        
-        prompt += `\n\nMedicine recommendations: ${medicineResponse}`;
-        const geminiResponse = await callGeminiAPI(prompt, responseLang);
-        return `${geminiResponse}\n\n${medicineResponse}`;
       } catch (error) {
         console.error('Gemini API failed, using medicine fallback:', error);
         return medicineResponse;
