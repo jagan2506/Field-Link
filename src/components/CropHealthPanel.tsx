@@ -3,6 +3,7 @@ import { Eye, Camera, Zap, ChevronLeft, ChevronRight, Upload } from 'lucide-reac
 import { CropHealthData } from '../utils/mockData';
 import { useLanguage } from '../contexts/LanguageContext';
 import { analyzeImageWithGemini } from '../utils/geminiImageAnalysis';
+import { AIMonitoringSystem, MultispectralData, PestRiskAnalysis } from '../utils/aiMonitoring';
 
 interface CropHealthPanelProps {
   cropHealth: CropHealthData;
@@ -19,6 +20,8 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
   const [showLanguageDialog, setShowLanguageDialog] = useState(false);
   const [pendingImageData, setPendingImageData] = useState<{data: string, index: number} | null>(null);
   const [analysisComplete, setAnalysisComplete] = useState(false);
+  const [multispectralData, setMultispectralData] = useState<{[key: number]: MultispectralData}>({});
+  const [pestRiskData, setPestRiskData] = useState<{[key: number]: PestRiskAnalysis}>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   const defaultImages = [
@@ -61,6 +64,14 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
         recommendations: geminiResults.recommendations || []
       };
       
+      // Perform multispectral analysis
+      const multispectral = AIMonitoringSystem.analyzeMultispectralImage(imageData);
+      setMultispectralData(prev => ({ ...prev, [imageIndex]: multispectral }));
+      
+      // Perform pest risk analysis
+      const pestRisk = AIMonitoringSystem.assessPestRisk({ temperature: 25, soilMoisture: 60 }, multispectral);
+      setPestRiskData(prev => ({ ...prev, [imageIndex]: pestRisk }));
+      
       setAnalysisResults(prev => ({ ...prev, [imageIndex]: finalResults }));
       
       // Auto-open ChatBot with comprehensive analysis
@@ -69,7 +80,10 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
           ...finalResults,
           imageUrl: imageData,
           imageBase64: imageData,
-          pageLanguage: selectedLang
+          pageLanguage: selectedLang,
+          multispectral: multispectral,
+          pestRisk: pestRisk,
+          aiMonitoring: true
         };
         
         const remedyMessage = finalResults.diseaseDetected 
@@ -267,6 +281,63 @@ const CropHealthPanel: React.FC<CropHealthPanelProps> = ({ cropHealth, onOpenCha
         
         {/* Analysis Results */}
         <div className="space-y-4 lg:space-y-6 order-2">
+          {/* Multispectral Analysis */}
+          {multispectralData[currentImage] && (
+            <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 lg:p-6 rounded-lg">
+              <h3 className="text-lg lg:text-xl font-semibold text-gray-800 mb-3">Multispectral Analysis</h3>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 lg:gap-4 text-center">
+                <div>
+                  <p className="text-xs lg:text-sm text-gray-600">NDVI</p>
+                  <p className="text-lg lg:text-xl font-bold text-green-600">{multispectralData[currentImage].ndvi.toFixed(3)}</p>
+                </div>
+                <div>
+                  <p className="text-xs lg:text-sm text-gray-600">NDRE</p>
+                  <p className="text-lg lg:text-xl font-bold text-blue-600">{multispectralData[currentImage].ndre.toFixed(3)}</p>
+                </div>
+                <div>
+                  <p className="text-xs lg:text-sm text-gray-600">GNDVI</p>
+                  <p className="text-lg lg:text-xl font-bold text-purple-600">{multispectralData[currentImage].gndvi.toFixed(3)}</p>
+                </div>
+                <div>
+                  <p className="text-xs lg:text-sm text-gray-600">NIR</p>
+                  <p className="text-lg lg:text-xl font-bold text-red-600">{multispectralData[currentImage].nir.toFixed(3)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Pest Risk Analysis */}
+          {pestRiskData[currentImage] && (
+            <div className={`p-4 lg:p-6 rounded-lg ${
+              pestRiskData[currentImage].riskLevel === 'Critical' ? 'bg-red-50 border-2 border-red-200' :
+              pestRiskData[currentImage].riskLevel === 'High' ? 'bg-orange-50 border-2 border-orange-200' :
+              pestRiskData[currentImage].riskLevel === 'Medium' ? 'bg-yellow-50 border-2 border-yellow-200' :
+              'bg-green-50 border-2 border-green-200'
+            }`}>
+              <h3 className="text-lg lg:text-xl font-semibold text-gray-800 mb-3">AI Pest Risk Assessment</h3>
+              <div className="grid grid-cols-2 gap-2 lg:gap-4">
+                <div>
+                  <p className="text-xs lg:text-sm text-gray-600">Risk Level</p>
+                  <p className={`text-lg lg:text-xl font-bold ${
+                    pestRiskData[currentImage].riskLevel === 'Critical' ? 'text-red-600' :
+                    pestRiskData[currentImage].riskLevel === 'High' ? 'text-orange-600' :
+                    pestRiskData[currentImage].riskLevel === 'Medium' ? 'text-yellow-600' : 'text-green-600'
+                  }`}>{pestRiskData[currentImage].riskLevel}</p>
+                </div>
+                <div>
+                  <p className="text-xs lg:text-sm text-gray-600">Confidence</p>
+                  <p className="text-lg lg:text-xl font-bold text-blue-600">{pestRiskData[currentImage].confidence}%</p>
+                </div>
+              </div>
+              {pestRiskData[currentImage].pestTypes.length > 0 && (
+                <div className="mt-3">
+                  <p className="text-xs lg:text-sm text-gray-600 mb-1">Detected Threats:</p>
+                  <p className="text-sm text-red-700 font-medium">{pestRiskData[currentImage].pestTypes.join(', ')}</p>
+                </div>
+              )}
+            </div>
+          )}
+          
           <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 lg:p-6 rounded-lg">
             <div className="flex items-center space-x-2 mb-3 lg:mb-4">
               <Camera className="w-4 h-4 lg:w-5 lg:h-5 text-blue-600" />

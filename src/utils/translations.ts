@@ -87,16 +87,16 @@ export interface Translations {
 
 export const translations: Record<Language, Translations> = {
   en: {
-    appTitle: "Field Link",
-    appSubtitle: "Advanced Agricultural Intelligence System",
+    appTitle: "AgriVision AI",
+    appSubtitle: "AI-Powered Crop Health & Pest Risk Monitoring",
     lastUpdated: "Last updated:",
     farm: "FARM",
     loadingText: "Loading farm data...",
 
     currentFieldConditions: "Current Field Conditions",
     smartAlerts: "Smart Alerts & Recommendations",
-    cropHealthVisualInsights: "Crop Health Visual Insights",
-    dataTrendsAnalytics: "Data Trends & Analytics",
+    cropHealthVisualInsights: "Multispectral Crop Analysis",
+    dataTrendsAnalytics: "AI Monitoring & Pest Risk Analytics",
 
     temperature: "Temperature",
     soilMoisture: "Soil Moisture",
