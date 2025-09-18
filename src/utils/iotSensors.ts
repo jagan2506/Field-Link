@@ -44,6 +44,7 @@ export class IoTSensorManager {
   }
 
   async getSensorReadings(): Promise<SensorReading | null> {
+    // Try ESP32 first
     if (!this.isConnected) {
       await this.connectToESP32();
     }
@@ -58,7 +59,32 @@ export class IoTSensorManager {
         timestamp: new Date()
       };
     } catch (error) {
-      console.error('Failed to get sensor readings:', error);
+      console.error('ESP32 failed, trying Supabase:', error);
+      return this.getFromSupabase();
+    }
+  }
+
+  async getFromSupabase(): Promise<SensorReading | null> {
+    try {
+      const response = await fetch('https://gmlollhziblltvgxccfl.supabase.co/rest/v1/sensor_readings?select=*&order=timestamp.desc&limit=1', {
+        headers: {
+          'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtbG9sbGh6aWJsbHR2Z3hjY2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNzUwMTUsImV4cCI6MjA3Mzc1MTAxNX0.ObULZe5cgYMCy5DU5cw19G5qbum-HAyhKQ4lq-WwZJw',
+          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdtbG9sbGh6aWJsbHR2Z3hjY2ZsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxNzUwMTUsImV4cCI6MjA3Mzc1MTAxNX0.ObULZe5cgYMCy5DU5cw19G5qbum-HAyhKQ4lq-WwZJw'
+        }
+      });
+      
+      const data = await response.json();
+      if (data && data.length > 0) {
+        const latest = data[0];
+        return {
+          temperature: latest.temperature,
+          soilMoisture: latest.soil_moisture,
+          timestamp: new Date(latest.timestamp)
+        };
+      }
+      return null;
+    } catch (error) {
+      console.error('Supabase fetch failed:', error);
       return null;
     }
   }

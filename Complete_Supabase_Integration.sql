@@ -1,4 +1,5 @@
 -- COMPLETE SUPABASE SQL SETUP FOR AI AGRICULTURAL MONITORING
+-- Run this in Supabase SQL Editor only
 
 -- 1. Create all tables
 CREATE TABLE sensor_readings (
