@@ -97,41 +97,46 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldO
   const speakText = (text: string) => {
     if ('speechSynthesis' in window) {
       const utterance = new SpeechSynthesisUtterance(text);
-      const targetLang = languages[selectedLanguage as keyof typeof languages].code;
+      
+      // Determine language from analysis data or current selection
+      const currentLang = analysisData?.pageLanguage || selectedLanguage;
+      const targetLang = languages[currentLang as keyof typeof languages]?.code || 'en-US';
       utterance.lang = targetLang;
       
       // Wait for voices to load
       const setVoiceAndSpeak = () => {
         const voices = speechSynthesis.getVoices();
-        
-        // Find best voice for each language
         let selectedVoice = null;
         
-        if (selectedLanguage === 'telugu') {
+        // Enhanced voice selection for local languages
+        if (currentLang === 'telugu') {
           selectedVoice = voices.find(voice => 
-            voice.lang.includes('te') || voice.name.toLowerCase().includes('telugu')
-          ) || voices.find(voice => voice.lang.startsWith('hi'));
-        } else if (selectedLanguage === 'malayalam') {
+            voice.lang.includes('te-IN') || voice.lang.includes('te') || 
+            voice.name.toLowerCase().includes('telugu')
+          ) || voices.find(voice => voice.lang.includes('hi-IN'));
+        } else if (currentLang === 'malayalam') {
           selectedVoice = voices.find(voice => 
-            voice.lang.includes('ml') || voice.name.toLowerCase().includes('malayalam')
-          ) || voices.find(voice => voice.lang.startsWith('hi'));
-        } else if (selectedLanguage === 'tamil') {
+            voice.lang.includes('ml-IN') || voice.lang.includes('ml') || 
+            voice.name.toLowerCase().includes('malayalam')
+          ) || voices.find(voice => voice.lang.includes('hi-IN'));
+        } else if (currentLang === 'tamil') {
           selectedVoice = voices.find(voice => 
-            voice.lang.includes('ta') || voice.name.toLowerCase().includes('tamil')
-          ) || voices.find(voice => voice.lang.startsWith('hi'));
+            voice.lang.includes('ta-IN') || voice.lang.includes('ta') || 
+            voice.name.toLowerCase().includes('tamil')
+          ) || voices.find(voice => voice.lang.includes('hi-IN'));
         } else {
           selectedVoice = voices.find(voice => 
-            voice.lang.startsWith('en') && 
-            (voice.name.toLowerCase().includes('female') || voice.name.toLowerCase().includes('woman'))
-          ) || voices.find(voice => voice.lang.startsWith('en'));
+            voice.lang.includes('en-US') || voice.lang.includes('en-IN') || voice.lang.startsWith('en')
+          );
         }
         
         if (selectedVoice) {
           utterance.voice = selectedVoice;
+          console.log(`Using voice: ${selectedVoice.name} (${selectedVoice.lang}) for language: ${currentLang}`);
         }
         
-        utterance.rate = 0.9;
-        utterance.pitch = 1.2;
+        utterance.rate = 0.8;
+        utterance.pitch = 1.0;
         utterance.volume = 1.0;
         speechSynthesis.speak(utterance);
       };
@@ -241,10 +246,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldO
       
       // Use page language from analysis data for speech
       const speechLang = analysisData?.pageLanguage || detectedLang;
-      const oldLang = selectedLanguage;
-      setSelectedLanguage(speechLang);
+      if (speechLang !== selectedLanguage) {
+        setSelectedLanguage(speechLang);
+      }
       speakText(botResponse);
-      setSelectedLanguage(oldLang);
     } catch (error) {
       console.error('Error getting response:', error);
       const errorMessage: Message = {
@@ -338,10 +343,10 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldO
             setMessages(prev => [...prev, botMessage]);
             
             // Use detected language for speech
-            const oldLang = selectedLanguage;
-            setSelectedLanguage(detectedLang);
+            if (analysisData?.pageLanguage) {
+              setSelectedLanguage(analysisData.pageLanguage);
+            }
             speakText(botResponse);
-            setSelectedLanguage(oldLang);
           } catch (error) {
             console.error('Error in initial response:', error);
           } finally {
@@ -389,7 +394,14 @@ const ChatBot: React.FC<ChatBotProps> = ({ initialMessage, analysisData, shouldO
               <Globe className="w-3 h-3 lg:w-4 lg:h-4" />
               <select
                 value={selectedLanguage}
-                onChange={(e) => setSelectedLanguage(e.target.value)}
+                onChange={(e) => {
+                  setSelectedLanguage(e.target.value);
+                  // Test voice when language changes
+                  const testText = e.target.value === 'tamil' ? 'வணக்கம்' :
+                                  e.target.value === 'malayalam' ? 'നമസ്കാരം' :
+                                  e.target.value === 'telugu' ? 'నమస్కారం' : 'Hello';
+                  setTimeout(() => speakText(testText), 100);
+                }}
                 className="bg-green-700 text-white rounded px-1 lg:px-2 py-1 text-xs lg:text-sm"
               >
                 {Object.entries(languages).map(([key, lang]) => (
