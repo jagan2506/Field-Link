@@ -10,6 +10,7 @@ import ChatBot from './components/ChatBot';
 import AlertConfigModal from './components/AlertConfigModal';
 import AlertViewModal from './components/AlertViewModal';
 import { generateMockData, SensorData } from './utils/mockData';
+import { IoTSensorManager } from './utils/iotSensors';
 import { generatePDF } from './utils/pdfGenerator';
 import { useLanguage } from './contexts/LanguageContext';
 
@@ -30,19 +31,39 @@ function App() {
     phMin: 6.0,
     phMax: 7.5
   });
+  const [iotSensorManager] = useState(new IoTSensorManager());
+  const [useRealSensors, setUseRealSensors] = useState(false);
+  const [sensorStatus, setSensorStatus] = useState('Disconnected');
 
   useEffect(() => {
-    // Initialize with mock data
-    setSensorData(generateMockData());
-    
-    // Simulate real-time updates every 30 seconds (instead of hourly for demo)
-    const interval = setInterval(() => {
+    const fetchSensorData = async () => {
+      if (useRealSensors) {
+        setSensorStatus('Connecting...');
+        const realData = await iotSensorManager.getSensorReadings();
+        if (realData) {
+          setSensorStatus('Connected - Live Data');
+          const mockData = generateMockData();
+          setSensorData({
+            ...mockData,
+            temperature: realData.temperature,
+            soilMoisture: realData.soilMoisture
+          });
+          setLastUpdate(realData.timestamp);
+          return;
+        } else {
+          setSensorStatus('ESP32 Not Found');
+        }
+      } else {
+        setSensorStatus('Using Mock Data');
+      }
       setSensorData(generateMockData());
       setLastUpdate(new Date());
-    }, 30000);
+    };
 
+    fetchSensorData();
+    const interval = setInterval(fetchSensorData, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [useRealSensors, iotSensorManager]);
 
   const handleDownloadReport = () => {
     if (sensorData) {
@@ -127,6 +148,32 @@ function App() {
 
         {/* Action Buttons */}
         <section className="flex flex-col xs:flex-row flex-wrap gap-2 xs:gap-3 sm:gap-4 justify-center">
+          <div className="flex flex-col items-center gap-1">
+            <button 
+              onClick={() => {
+                if (!useRealSensors) {
+                  const esp32IP = prompt('Enter ESP32 IP address:', '192.168.1.100');
+                  if (esp32IP) {
+                    iotSensorManager.setESP32IP(esp32IP);
+                  }
+                }
+                setUseRealSensors(!useRealSensors);
+              }}
+              className={`flex items-center justify-center space-x-2 px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
+                useRealSensors ? 'bg-purple-600 hover:bg-purple-700 text-white' : 'bg-gray-600 hover:bg-gray-700 text-white'
+              }`}
+            >
+              <span>{useRealSensors ? '🔗 IoT Live' : '📡 Connect ESP32'}</span>
+            </button>
+            <span className={`text-xs px-2 py-1 rounded ${
+              sensorStatus === 'Connected - Live Data' ? 'bg-green-100 text-green-700' :
+              sensorStatus === 'Connecting...' ? 'bg-yellow-100 text-yellow-700' :
+              sensorStatus === 'ESP32 Not Found' ? 'bg-red-100 text-red-700' :
+              'bg-gray-100 text-gray-700'
+            }`}>
+              {sensorStatus}
+            </span>
+          </div>
           <button 
             onClick={handleDownloadReport}
             className="flex items-center justify-center space-x-2 bg-green-600 text-white px-3 xs:px-4 sm:px-6 py-2 xs:py-2.5 sm:py-3 rounded-lg hover:bg-green-700 transition-colors text-sm sm:text-base"

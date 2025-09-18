@@ -1,0 +1,101 @@
+#include <WiFi.h>
+#include <WebServer.h>
+#include <ArduinoJson.h>
+#include <OneWire.h>
+#include <DallasTemperature.h>
+
+// WiFi credentials - CHANGE THESE
+const char* ssid = "YOUR_WIFI_SSID";
+const char* password = "YOUR_WIFI_PASSWORD";
+
+// Sensor pins - Your configuration
+#define SOIL_MOISTURE_PIN A0  // Soil moisture sensor analog pin
+#define TEMP_SENSOR_PIN 4     // Temperature sensor digital pin D4
+
+// Temperature sensor setup (DS18B20 or DHT22)
+OneWire oneWire(TEMP_SENSOR_PIN);
+DallasTemperature tempSensor(&oneWire);
+
+WebServer server(80);
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Initialize temperature sensor
+  tempSensor.begin();
+  
+  // Connect to WiFi
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    Serial.println("Connecting to WiFi...");
+  }
+  
+  Serial.println("WiFi connected!");
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+  
+  // Setup server routes with CORS headers
+  server.on("/", []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(200, "text/plain", "ESP32 Sensor Server Running");
+  });
+  
+  server.on("/sensors", []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.sendHeader("Access-Control-Allow-Methods", "GET");
+    server.sendHeader("Access-Control-Allow-Headers", "Content-Type");
+    
+    // Read temperature
+    tempSensor.requestTemperatures();
+    float temperature = tempSensor.getTempCByIndex(0);
+    
+    // Read soil moisture (analog value 0-4095)
+    int soilMoistureRaw = analogRead(SOIL_MOISTURE_PIN);
+    
+    // Create JSON response
+    DynamicJsonDocument doc(200);
+    doc["temperature"] = temperature;
+    doc["soilMoisture"] = soilMoistureRaw;
+    doc["timestamp"] = millis();
+    
+    String response;
+    serializeJson(doc, response);
+    
+    server.send(200, "application/json", response);
+    
+    // Debug output
+    Serial.println("Temperature: " + String(temperature) + "°C");
+    Serial.println("Soil Moisture Raw: " + String(soilMoistureRaw));
+  });
+  
+  server.on("/status", []() {
+    server.sendHeader("Access-Control-Allow-Origin", "*");
+    server.send(200, "application/json", "{\"status\":\"connected\"}");
+  });
+  
+  server.begin();
+  Serial.println("HTTP server started");
+}
+
+void loop() {
+  server.handleClient();
+  delay(100);
+}
+
+// WIRING INSTRUCTIONS:
+// 1. Soil Moisture Sensor:
+//    - VCC -> ESP32 3.3V or 5V
+//    - GND -> ESP32 GND  
+//    - A0 -> ESP32 A0 (GPIO36)
+//
+// 2. DS18B20 Temperature Sensor:
+//    - VCC -> ESP32 3.3V
+//    - GND -> ESP32 GND
+//    - Data -> ESP32 D4 (GPIO4)
+//    - Add 4.7kΩ pull-up resistor between Data and VCC
+//
+// 3. Required Libraries:
+//    - ArduinoJson
+//    - OneWire  
+//    - DallasTemperature
